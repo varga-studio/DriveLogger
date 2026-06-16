@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>DriveLogger</title>
+
+    <!-- Favicon / App Icon – use your own app-logo.png -->
+    <link rel="icon" href="app-logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="app-logo.png">
+
     <style>
         :root {
             --bg: #0d1117;
@@ -70,27 +75,65 @@
             padding: 8px 4px 40px;
         }
 
+        /* ── Header with logo ── */
         .app-header {
-            text-align: center;
-            padding: 8px 0 4px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 6px 8px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 4px;
         }
-        .app-header .logo {
-            font-size: 1.8rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
+
+        .app-logo-wrap {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px var(--accent-glow);
+            transition: background var(--transition), box-shadow var(--transition);
+            overflow: hidden;
+        }
+        .app-logo-wrap img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+        .app-logo-wrap:hover img {
+            transform: scale(1.05);
+        }
+
+        .app-title-group {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+        .app-title-group .logo-text {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.8px;
             background: linear-gradient(135deg, var(--text), var(--text2));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            text-shadow: 0 0 40px var(--accent-glow);
+            transition: background var(--transition);
         }
-        .app-header .subtitle {
-            font-size: 0.8rem;
-            color: var(--text3);
-            letter-spacing: 0.3px;
+        .app-title-group .logo-sub {
+            font-size: 0.65rem;
             text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text3);
             font-weight: 500;
+            margin-top: -2px;
         }
 
+        /* ── Vehicle Toggle ── */
         .vehicle-toggle-wrap {
             background: var(--surface);
             border-radius: var(--radius);
@@ -163,6 +206,7 @@
             transform: translateX(-50%) scaleX(1);
         }
 
+        /* ── Cards ── */
         .card {
             background: var(--surface);
             border-radius: var(--radius);
@@ -329,13 +373,6 @@
             font-size: 0.8rem;
             border-radius: 18px;
             font-weight: 500;
-        }
-        .btn-icon {
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            border-radius: 50%;
-            font-size: 1.1rem;
         }
         .btn-block {
             width: 100%;
@@ -659,18 +696,32 @@
             .tracking-stat .stat-value {
                 font-size: 1.3rem;
             }
+            .app-title-group .logo-text {
+                font-size: 1.3rem;
+            }
+            .app-logo-wrap {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+            }
         }
     </style>
 </head>
 <body class="vehicle-car">
     <div class="app-container">
-        <!-- Header -->
+        <!-- ── Header with Logo ── -->
         <header class="app-header">
-            <div class="logo">DriveLogger</div>
-            <div class="subtitle">Track every kilometer</div>
+            <div class="app-logo-wrap" id="logoWrap">
+                <!-- Your app-logo.png will be displayed here -->
+                <img src="app-logo.png" alt="DriveLogger Logo" id="logoImg">
+            </div>
+            <div class="app-title-group">
+                <span class="logo-text">DriveLogger</span>
+                <span class="logo-sub">Track every kilometer</span>
+            </div>
         </header>
 
-        <!-- Vehicle Toggle -->
+        <!-- ── Vehicle Toggle ── -->
         <div class="vehicle-toggle-wrap" id="vehicleToggle">
             <button class="vehicle-btn active" data-vehicle="car" id="btnCar">
                 <span class="veh-emoji">🚗</span> Car
@@ -682,7 +733,7 @@
             </button>
         </div>
 
-        <!-- Settings Card -->
+        <!-- ── Settings Card ── -->
         <div class="card" id="settingsCard">
             <div class="card-header">
                 <span class="card-title">⚙️ Settings — <span id="activeVehicleLabel">Car</span></span>
@@ -706,14 +757,13 @@
             </div>
         </div>
 
-        <!-- GPS Status Banner -->
+        <!-- ── GPS Status Banner ── -->
         <div class="gps-banner" id="gpsBanner" style="display:none;">
             ⚠️ GPS is unavailable on this device. You can still log drives manually using odometer readings.
         </div>
 
-        <!-- Active Drive / Idle Panel -->
+        <!-- ── Active Drive / Idle Panel ── -->
         <div id="drivePanel">
-            <!-- Idle State -->
             <div class="card accent-border" id="idlePanel">
                 <div class="card-header">
                     <span class="card-title">🟢 Ready to Drive</span>
@@ -736,7 +786,6 @@
                 </div>
             </div>
 
-            <!-- Active Tracking Panel -->
             <div class="tracking-panel" id="trackingPanel" style="display:none;">
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                     <span style="font-weight:700;font-size:1rem;display:flex;align-items:center;gap:8px;">
@@ -768,7 +817,6 @@
                 </button>
             </div>
 
-            <!-- Post-Drive Summary -->
             <div class="card accent-border" id="summaryPanel" style="display:none;">
                 <div class="card-header">
                     <span class="card-title">📋 Drive Summary</span>
@@ -798,7 +846,7 @@
             </div>
         </div>
 
-        <!-- History Section -->
+        <!-- ── History Section ── -->
         <div class="card" id="historyCard">
             <div class="history-header">
                 <span class="card-title">📚 Drive History</span>
@@ -828,9 +876,7 @@
 
     <script>
         (function() {
-            // ──────────────────────────────────────
-            // DOM References
-            // ──────────────────────────────────────
+            // ── DOM refs ──
             const body = document.body;
             const btnCar = document.getElementById('btnCar');
             const btnVespa = document.getElementById('btnVespa');
@@ -878,20 +924,14 @@
             const toast = document.getElementById('toast');
             const gpsBanner = document.getElementById('gpsBanner');
             const settingsCard = document.getElementById('settingsCard');
+            const logoWrap = document.getElementById('logoWrap');
 
-            // ──────────────────────────────────────
-            // State
-            // ──────────────────────────────────────
+            // ── State ──
             const STORAGE_KEY = 'drivelogger_data';
             const ACTIVE_DRIVE_KEY = 'drivelogger_active_drive';
 
-            let currentVehicle = 'car'; // 'car' | 'vespa'
-            let settings = {
-                carRate: 0.5,
-                vespaRate: 0.25,
-                carPlate: '',
-                vespaPlate: '',
-            };
+            let currentVehicle = 'car';
+            let settings = { carRate: 0.5, vespaRate: 0.25, carPlate: '', vespaPlate: '' };
             let drives = [];
             let activeDrive = null;
             let gpsWatchId = null;
@@ -901,24 +941,16 @@
             let durationInterval = null;
             let driveStartTimestamp = null;
 
-            // ──────────────────────────────────────
-            // Load / Save
-            // ──────────────────────────────────────
+            // ── Storage ──
             function loadFromStorage() {
                 try {
                     const raw = localStorage.getItem(STORAGE_KEY);
                     if (raw) {
                         const data = JSON.parse(raw);
-                        if (data.settings) {
-                            settings = { ...settings, ...data.settings };
-                        }
-                        if (data.drives) {
-                            drives = data.drives;
-                        }
+                        if (data.settings) settings = { ...settings, ...data.settings };
+                        if (data.drives) drives = data.drives;
                     }
-                } catch (e) {
-                    console.warn('Failed to load from storage:', e);
-                }
+                } catch (e) { console.warn(e); }
                 try {
                     const rawActive = localStorage.getItem(ACTIVE_DRIVE_KEY);
                     if (rawActive) {
@@ -935,55 +967,36 @@
                             localStorage.removeItem(ACTIVE_DRIVE_KEY);
                         }
                     }
-                } catch (e) {
-                    console.warn('Failed to load active drive:', e);
-                }
+                } catch (e) { console.warn(e); }
             }
 
             function saveToStorage() {
                 try {
-                    const data = { settings, drives };
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                } catch (e) {
-                    showToast('Storage full! Please export and clear some drives.', 'error');
-                }
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings, drives }));
+                } catch (e) { showToast('Storage full! Export & clear some drives.', 'error'); }
             }
 
             function saveActiveDriveToStorage() {
                 if (activeDrive) {
-                    const ad = {
-                        ...activeDrive,
-                        gpsDistance: accumulatedGpsDistance,
-                        lastPosition: previousPosition,
-                        watchId: null,
-                    };
-                    try {
-                        localStorage.setItem(ACTIVE_DRIVE_KEY, JSON.stringify(ad));
-                    } catch (e) { /* ignore */ }
+                    const ad = { ...activeDrive, gpsDistance: accumulatedGpsDistance, lastPosition: previousPosition,
+                        watchId: null };
+                    try { localStorage.setItem(ACTIVE_DRIVE_KEY, JSON.stringify(ad)); } catch (e) { /* ignore */ }
                 } else {
                     localStorage.removeItem(ACTIVE_DRIVE_KEY);
                 }
             }
 
-            // ──────────────────────────────────────
-            // Helpers
-            // ──────────────────────────────────────
-            function getCurrentRate() {
-                return currentVehicle === 'car' ? settings.carRate : settings.vespaRate;
-            }
+            // ── Helpers ──
+            function getCurrentRate() { return currentVehicle === 'car' ? settings.carRate : settings.vespaRate; }
 
-            function getCurrentPlate() {
-                return currentVehicle === 'car' ? settings.carPlate : settings.vespaPlate;
-            }
+            function getCurrentPlate() { return currentVehicle === 'car' ? settings.carPlate : settings.vespaPlate; }
 
             function setCurrentPlate(val) {
                 if (currentVehicle === 'car') settings.carPlate = val;
                 else settings.vespaPlate = val;
             }
 
-            function formatCurrency(amount) {
-                return amount.toFixed(2) + ' €';
-            }
+            function formatCurrency(amount) { return amount.toFixed(2) + ' €'; }
 
             function formatDistance(km) {
                 if (km < 0.01) return '0.00 km';
@@ -995,8 +1008,7 @@
                 const h = Math.floor(seconds / 3600);
                 const m = Math.floor((seconds % 3600) / 60);
                 const s = Math.floor(seconds % 60);
-                return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2,
-                    '0');
+                return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
             }
 
             function formatDateTime(isoString) {
@@ -1009,16 +1021,14 @@
             function formatDateForCSV(isoString) {
                 if (!isoString) return '';
                 const d = new Date(isoString);
-                return d.getFullYear() + '-' +
-                    String(d.getMonth() + 1).padStart(2, '0') + '-' +
-                    String(d.getDate()).padStart(2, '0');
+                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate())
+                    .padStart(2, '0');
             }
 
             function formatTimeForCSV(isoString) {
                 if (!isoString) return '';
                 const d = new Date(isoString);
-                return String(d.getHours()).padStart(2, '0') + ':' +
-                    String(d.getMinutes()).padStart(2, '0');
+                return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
             }
 
             function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -1028,31 +1038,29 @@
                 const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                     Math.sin(dLon / 2) * Math.sin(dLon / 2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                return R * c;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             }
 
             function showToast(message, type = '') {
                 toast.textContent = message;
                 toast.className = 'toast ' + type + ' show';
                 clearTimeout(toast._timeout);
-                toast._timeout = setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 2200);
+                toast._timeout = setTimeout(() => toast.classList.remove('show'), 2200);
             }
 
-            // ──────────────────────────────────────
-            // CSV Export (clean, semicolon-delimited)
-            // ──────────────────────────────────────
+            function escapeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ── CSV Export ──
             function exportData() {
                 if (drives.length === 0) {
                     showToast('No drives to export.', 'error');
                     return;
                 }
-
                 const rows = [];
-
-                // ── Header ──
                 const headers = [
                     '#', 'Vehicle', 'Plate',
                     'Start Date', 'Start Time',
@@ -1064,25 +1072,19 @@
                 ];
                 rows.push(headers.join(';'));
 
-                // ── Data rows (sorted newest first) ──
                 const sorted = [...drives].sort((a, b) => new Date(b.startDateTime) - new Date(a.startDateTime));
-
                 let index = 1;
                 sorted.forEach(d => {
-                    const startMileage = (d.startMileage !== null && d.startMileage !== undefined) ? d
-                        .startMileage : '';
-                    const endMileage = (d.endMileage !== null && d.endMileage !== undefined) ? d.endMileage :
-                        '';
-                    const odometerDist = (startMileage !== '' && endMileage !== '') ? Math.abs(endMileage -
-                        startMileage) : 0;
-                    const gpsDist = d.gpsDistance || 0;
-                    const dist = gpsDist > 0 ? gpsDist : odometerDist;
+                    const sm = (d.startMileage !== null && d.startMileage !== undefined) ? d.startMileage : '';
+                    const em = (d.endMileage !== null && d.endMileage !== undefined) ? d.endMileage : '';
+                    const odo = (sm !== '' && em !== '') ? Math.abs(em - sm) : 0;
+                    const gps = d.gpsDistance || 0;
+                    const dist = gps > 0 ? gps : odo;
                     const rate = d.rate || getCurrentRate();
                     const cost = dist * rate;
-                    const duration = d.duration || 0;
+                    const dur = d.duration || 0;
 
-                    // Escape fields that contain semicolon, quotes, or newlines
-                    const escape = (val) => {
+                    const esc = (val) => {
                         if (val === null || val === undefined) return '';
                         const str = String(val);
                         if (str.includes(';') || str.includes('"') || str.includes('\n')) {
@@ -1090,29 +1092,26 @@
                         }
                         return str;
                     };
-
-                    const row = [
+                    rows.push([
                         index++,
-                        escape(d.vehicle === 'car' ? 'Car' : 'Vespa'),
-                        escape(d.plate || ''),
-                        escape(formatDateForCSV(d.startDateTime)),
-                        escape(formatTimeForCSV(d.startDateTime)),
-                        escape(d.endDateTime ? formatDateForCSV(d.endDateTime) : ''),
-                        escape(d.endDateTime ? formatTimeForCSV(d.endDateTime) : ''),
-                        escape(startMileage !== '' ? startMileage : ''),
-                        escape(endMileage !== '' ? endMileage : ''),
-                        escape(odometerDist.toFixed(3)),
-                        escape(gpsDist.toFixed(3)),
-                        escape(formatDuration(duration)),
-                        escape(duration),
-                        escape(rate.toFixed(2)),
-                        escape(cost.toFixed(2)),
-                        escape(d.description || '')
-                    ];
-                    rows.push(row.join(';'));
+                        esc(d.vehicle === 'car' ? 'Car' : 'Vespa'),
+                        esc(d.plate || ''),
+                        esc(formatDateForCSV(d.startDateTime)),
+                        esc(formatTimeForCSV(d.startDateTime)),
+                        esc(d.endDateTime ? formatDateForCSV(d.endDateTime) : ''),
+                        esc(d.endDateTime ? formatTimeForCSV(d.endDateTime) : ''),
+                        esc(sm !== '' ? sm : ''),
+                        esc(em !== '' ? em : ''),
+                        esc(odo.toFixed(3)),
+                        esc(gps.toFixed(3)),
+                        esc(formatDuration(dur)),
+                        esc(dur),
+                        esc(rate.toFixed(2)),
+                        esc(cost.toFixed(2)),
+                        esc(d.description || '')
+                    ].join(';'));
                 });
 
-                // ── Footer summary (as comment rows, single column) ──
                 const totalDist = sorted.reduce((sum, d) => {
                     const sm = (d.startMileage !== null && d.startMileage !== undefined) ? d.startMileage : 0;
                     const em = (d.endMileage !== null && d.endMileage !== undefined) ? d.endMileage : 0;
@@ -1126,8 +1125,7 @@
                     const odo = (sm && em) ? Math.abs(em - sm) : 0;
                     const gps = d.gpsDistance || 0;
                     const dist = gps > 0 ? gps : odo;
-                    const rate = d.rate || getCurrentRate();
-                    return sum + dist * rate;
+                    return sum + dist * (d.rate || getCurrentRate());
                 }, 0);
 
                 rows.push('');
@@ -1137,7 +1135,6 @@
                 rows.push('Total Drives;' + drives.length);
 
                 const csvStr = rows.join('\n');
-                // Add BOM for Excel UTF-8 detection
                 const blob = new Blob(['\uFEFF' + csvStr], { type: 'text/csv;charset=utf-8;' });
                 const url = URL.createObjectURL(blob);
                 downloadLink.href = url;
@@ -1147,9 +1144,7 @@
                 showToast('CSV exported! 📥 ' + drives.length + ' drives', 'success');
             }
 
-            // ──────────────────────────────────────
-            // UI Update Functions
-            // ──────────────────────────────────────
+            // ── UI updates ──
             function updateVehicleUI() {
                 body.className = currentVehicle === 'car' ? 'vehicle-car' : 'vehicle-vespa';
                 btnCar.classList.toggle('active', currentVehicle === 'car');
@@ -1161,12 +1156,14 @@
                 rateInput.value = getCurrentRate().toFixed(2);
                 plateInput.value = getCurrentPlate();
                 platePreview.textContent = getCurrentPlate() ? 'Plate: ' + getCurrentPlate() : '';
-                updateSettingsCardAccent();
-            }
-
-            function updateSettingsCardAccent() {
                 settingsCard.style.borderLeftColor = currentVehicle === 'car' ? '#f59e0b' : '#06d6a0';
-                settingsCard.style.transition = 'border-left-color 0.3s';
+                document.documentElement.style.setProperty('--accent-glow',
+                    currentVehicle === 'car' ? 'rgba(245,158,11,0.25)' : 'rgba(6,214,160,0.25)');
+                // Update logo wrapper background gradient to match accent
+                const wrap = document.querySelector('.app-logo-wrap');
+                wrap.style.background = currentVehicle === 'car' ?
+                    'linear-gradient(135deg, #f59e0b, #d97706)' :
+                    'linear-gradient(135deg, #06d6a0, #05b88a)';
             }
 
             function updateHistoryUI() {
@@ -1179,13 +1176,13 @@
                 } else {
                     historyCount.textContent = drives.length + ' drive' + (drives.length !== 1 ? 's' : '');
                     summaryBar.style.display = 'flex';
-                    let totalDist = 0;
-                    let totalCost = 0;
+                    let totalDist = 0,
+                        totalCost = 0;
                     const sortedDrives = [...drives].sort((a, b) => new Date(b.startDateTime) - new Date(a
                     .startDateTime));
                     sortedDrives.forEach(d => {
-                        const dist = d.gpsDistance > 0 ? d.gpsDistance : (d.endMileage && d
-                            .startMileage ? Math.abs(d.endMileage - d.startMileage) : 0);
+                        const dist = d.gpsDistance > 0 ? d.gpsDistance : (d.endMileage && d.startMileage ?
+                            Math.abs(d.endMileage - d.startMileage) : 0);
                         const cost = dist * (d.rate || getCurrentRate());
                         totalDist += dist;
                         totalCost += cost;
@@ -1194,22 +1191,22 @@
                         const vehEmoji = d.vehicle === 'car' ? '🚗' : '🛵';
                         const vehLabel = d.vehicle === 'car' ? 'Car' : 'Vespa';
                         card.innerHTML = `
-                    <div class="drive-top">
-                      <span class="drive-vehicle">${vehEmoji} ${vehLabel}${d.plate ? ' <span style="font-size:0.7rem;color:var(--text3);">(' + d.plate + ')</span>' : ''}</span>
-                      <span class="drive-cost">${formatCurrency(cost)}</span>
-                    </div>
-                    <div class="drive-details">
-                      <span>📏 ${formatDistance(dist)}</span>
-                      <span>⏱️ ${formatDuration(d.duration || 0)}</span>
-                      <span>📅 ${formatDateTime(d.startDateTime)}</span>
-                    </div>
-                    ${d.description ? '<div class="drive-desc">📝 ' + escapeHTML(d.description) + '</div>' : ''}
-                    <div style="font-size:0.7rem;color:var(--text3);">
-                      GPS: ${d.gpsDistance > 0 ? formatDistance(d.gpsDistance) : 'N/A'} | Odo: ${d.startMileage !== null ? d.startMileage + '→' + (d.endMileage !== null ? d.endMileage : '?') + ' km' : 'N/A'}
-                    </div>
-                    <div class="drive-actions">
-                      <button class="btn btn-sm btn-outline delete-drive-btn" data-id="${d.id}">🗑️</button>
-                    </div>`;
+                            <div class="drive-top">
+                                <span class="drive-vehicle">${vehEmoji} ${vehLabel}${d.plate ? ' <span style="font-size:0.7rem;color:var(--text3);">(' + d.plate + ')</span>' : ''}</span>
+                                <span class="drive-cost">${formatCurrency(cost)}</span>
+                            </div>
+                            <div class="drive-details">
+                                <span>📏 ${formatDistance(dist)}</span>
+                                <span>⏱️ ${formatDuration(d.duration || 0)}</span>
+                                <span>📅 ${formatDateTime(d.startDateTime)}</span>
+                            </div>
+                            ${d.description ? '<div class="drive-desc">📝 ' + escapeHTML(d.description) + '</div>' : ''}
+                            <div style="font-size:0.7rem;color:var(--text3);">
+                                GPS: ${d.gpsDistance > 0 ? formatDistance(d.gpsDistance) : 'N/A'} | Odo: ${d.startMileage !== null ? d.startMileage + '→' + (d.endMileage !== null ? d.endMileage : '?') + ' km' : 'N/A'}
+                            </div>
+                            <div class="drive-actions">
+                                <button class="btn btn-sm btn-outline delete-drive-btn" data-id="${d.id}">🗑️</button>
+                            </div>`;
                         drivesList.appendChild(card);
                     });
                     sumTotalDist.textContent = formatDistance(totalDist);
@@ -1218,23 +1215,13 @@
                     drivesList.querySelectorAll('.delete-drive-btn').forEach(btn => {
                         btn.addEventListener('click', function() {
                             const id = this.getAttribute('data-id');
-                            deleteDrive(id);
+                            drives = drives.filter(d => d.id !== id);
+                            saveToStorage();
+                            updateHistoryUI();
+                            showToast('Drive deleted', '');
                         });
                     });
                 }
-            }
-
-            function escapeHTML(str) {
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
-            }
-
-            function deleteDrive(id) {
-                drives = drives.filter(d => d.id !== id);
-                saveToStorage();
-                updateHistoryUI();
-                showToast('Drive deleted', '');
             }
 
             function updateLiveStats() {
@@ -1243,13 +1230,10 @@
                 const elapsedSec = Math.floor((now - driveStartTimestamp) / 1000);
                 liveDistance.textContent = formatDistance(accumulatedGpsDistance);
                 liveDuration.textContent = formatDuration(elapsedSec);
-                const cost = accumulatedGpsDistance * getCurrentRate();
-                liveCost.textContent = formatCurrency(cost);
+                liveCost.textContent = formatCurrency(accumulatedGpsDistance * getCurrentRate());
             }
 
-            // ──────────────────────────────────────
-            // GPS
-            // ──────────────────────────────────────
+            // ── GPS ──
             function startGpsTracking() {
                 if (!navigator.geolocation) {
                     gpsAvailable = false;
@@ -1264,12 +1248,6 @@
                 previousPosition = activeDrive?.lastPosition || null;
                 accumulatedGpsDistance = activeDrive?.gpsDistance || 0;
 
-                const options = {
-                    enableHighAccuracy: true,
-                    timeout: 30000,
-                    maximumAge: 5000,
-                };
-
                 gpsWatchId = navigator.geolocation.watchPosition(
                     (position) => {
                         gpsAvailable = true;
@@ -1280,12 +1258,10 @@
                         const speed = position.coords.speed;
 
                         if (accuracy < 30) {
-                            gpsStatus.textContent = '● GPS active — accuracy: ' + Math.round(accuracy) +
-                                'm';
+                            gpsStatus.textContent = '● GPS active — accuracy: ' + Math.round(accuracy) + 'm';
                             gpsStatus.className = 'gps-status good';
                         } else if (accuracy < 100) {
-                            gpsStatus.textContent = '● GPS moderate — accuracy: ' + Math.round(accuracy) +
-                                'm';
+                            gpsStatus.textContent = '● GPS moderate — accuracy: ' + Math.round(accuracy) + 'm';
                             gpsStatus.className = 'gps-status';
                         } else {
                             gpsStatus.textContent = '● GPS poor accuracy: ' + Math.round(accuracy) + 'm';
@@ -1299,13 +1275,9 @@
                         }
 
                         if (previousPosition && previousPosition.lat !== null) {
-                            const dist = haversineDistance(previousPosition.lat, previousPosition.lon, lat,
-                                lon);
-                            if (dist < 0.5) {
-                                accumulatedGpsDistance += dist;
-                            } else if (dist < 5) {
-                                accumulatedGpsDistance += Math.min(dist, 0.3);
-                            }
+                            const dist = haversineDistance(previousPosition.lat, previousPosition.lon, lat, lon);
+                            if (dist < 0.5) accumulatedGpsDistance += dist;
+                            else if (dist < 5) accumulatedGpsDistance += Math.min(dist, 0.3);
                         }
                         previousPosition = { lat, lon, timestamp: position.timestamp };
                         if (activeDrive) {
@@ -1322,30 +1294,23 @@
                         gpsStatus.textContent = '⚠️ GPS error: ' + error.message;
                         gpsStatus.className = 'gps-status poor';
                         liveSpeed.textContent = '-- km/h';
-                    },
-                    options
+                    }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 5000 }
                 );
             }
 
             function stopGpsTracking() {
-                if (gpsWatchId !== null) {
-                    navigator.geolocation.clearWatch(gpsWatchId);
-                    gpsWatchId = null;
-                }
+                if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId);
+                    gpsWatchId = null; }
             }
 
-            // ──────────────────────────────────────
-            // Drive Actions
-            // ──────────────────────────────────────
+            // ── Drive actions ──
             function startDrive() {
                 const startMileageValue = startMileageInput.value.trim();
                 if (startMileageValue === '' || isNaN(parseFloat(startMileageValue))) {
                     startMileageInput.classList.add('input-error');
                     startMileageInput.focus();
                     showToast('⚠️ Please enter the start odometer reading before starting.', 'error');
-                    setTimeout(() => {
-                        startMileageInput.classList.remove('input-error');
-                    }, 2500);
+                    setTimeout(() => startMileageInput.classList.remove('input-error'), 2500);
                     return;
                 }
                 startMileageInput.classList.remove('input-error');
@@ -1389,10 +1354,8 @@
 
             function endDrive() {
                 stopGpsTracking();
-                if (durationInterval) {
-                    clearInterval(durationInterval);
-                    durationInterval = null;
-                }
+                if (durationInterval) { clearInterval(durationInterval);
+                    durationInterval = null; }
                 const now = new Date().toISOString();
                 const elapsedSec = Math.floor((Date.now() - driveStartTimestamp) / 1000);
                 if (activeDrive) {
@@ -1450,10 +1413,8 @@
                 driveStartTimestamp = null;
                 gpsWatchId = null;
                 localStorage.removeItem(ACTIVE_DRIVE_KEY);
-                if (durationInterval) {
-                    clearInterval(durationInterval);
-                    durationInterval = null;
-                }
+                if (durationInterval) { clearInterval(durationInterval);
+                    durationInterval = null; }
                 saveToStorage();
                 updateHistoryUI();
                 idlePanel.style.display = 'block';
@@ -1471,10 +1432,8 @@
 
             function discardDrive() {
                 stopGpsTracking();
-                if (durationInterval) {
-                    clearInterval(durationInterval);
-                    durationInterval = null;
-                }
+                if (durationInterval) { clearInterval(durationInterval);
+                    durationInterval = null; }
                 activeDrive = null;
                 accumulatedGpsDistance = 0;
                 previousPosition = null;
@@ -1494,23 +1453,15 @@
                 showToast('Drive discarded', '');
             }
 
-            // ──────────────────────────────────────
-            // Event Listeners
-            // ──────────────────────────────────────
+            // ── Event listeners ──
             btnCar.addEventListener('click', () => {
-                if (activeDrive) {
-                    showToast('Cannot switch vehicle during an active drive.', 'error');
-                    return;
-                }
+                if (activeDrive) { showToast('Cannot switch vehicle during an active drive.', 'error'); return; }
                 currentVehicle = 'car';
                 updateVehicleUI();
                 saveToStorage();
             });
             btnVespa.addEventListener('click', () => {
-                if (activeDrive) {
-                    showToast('Cannot switch vehicle during an active drive.', 'error');
-                    return;
-                }
+                if (activeDrive) { showToast('Cannot switch vehicle during an active drive.', 'error'); return; }
                 currentVehicle = 'vespa';
                 updateVehicleUI();
                 saveToStorage();
@@ -1529,10 +1480,7 @@
             });
             saveRateBtn.addEventListener('click', () => {
                 const val = parseFloat(rateInput.value);
-                if (isNaN(val) || val <= 0) {
-                    showToast('Please enter a valid rate > 0', 'error');
-                    return;
-                }
+                if (isNaN(val) || val <= 0) { showToast('Please enter a valid rate > 0', 'error'); return; }
                 if (currentVehicle === 'car') settings.carRate = val;
                 else settings.vespaRate = val;
                 rateDisplay.textContent = formatCurrency(val) + ' /km';
@@ -1550,20 +1498,16 @@
             discardDriveBtn.addEventListener('click', discardDrive);
             summaryEndMileage.addEventListener('input', updateOdometerDiff);
             exportBtn.addEventListener('click', exportData);
-
             rateInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') saveRateBtn.click();
                 if (e.key === 'Escape') cancelRateBtn.click();
             });
 
-            // ──────────────────────────────────────
-            // Initialize
-            // ──────────────────────────────────────
+            // ── Init ──
             function init() {
                 loadFromStorage();
                 updateVehicleUI();
                 updateHistoryUI();
-                updateSettingsCardAccent();
 
                 if (activeDrive && !activeDrive.endDateTime) {
                     accumulatedGpsDistance = activeDrive.gpsDistance || 0;
@@ -1609,35 +1553,20 @@
                     gpsBanner.style.display = 'flex';
                 }
 
-                if (activeDrive && !activeDrive.endDateTime) {
-                    updateLiveStats();
-                }
-
-                console.log('🚗 DriveLogger initialized — Vehicle:', currentVehicle,
-                    '| Rate:', formatCurrency(getCurrentRate()) + '/km',
-                    '| Drives saved:', drives.length,
-                    '| Active drive:', activeDrive ? 'Yes' : 'No');
+                console.log('🚗 DriveLogger ready —', currentVehicle, '| Rate:', formatCurrency(getCurrentRate()) +
+                    '/km', '| Drives:', drives.length);
             }
 
             init();
 
-            window.addEventListener('beforeunload', () => {
-                saveActiveDriveToStorage();
-                saveToStorage();
-            });
-
+            window.addEventListener('beforeunload', () => { saveActiveDriveToStorage();
+                saveToStorage(); });
             setInterval(() => {
-                if (activeDrive && !activeDrive.endDateTime) {
-                    saveActiveDriveToStorage();
-                }
+                if (activeDrive && !activeDrive.endDateTime) saveActiveDriveToStorage();
             }, 10000);
 
             console.log('%c🚗 DriveLogger Ready %c| %cDark Mode • GPS • CSV Export',
-                'font-weight:bold;font-size:14px;',
-                '',
-                'color:#8b949e;');
-            console.log('%c💡 Tip: Toggle between Car & Vespa to see the UI change!',
-                'color:#f59e0b;font-style:italic;');
+                'font-weight:bold;font-size:14px;', '', 'color:#8b949e;');
         })();
     </script>
 </body>
