@@ -70,7 +70,6 @@
             padding: 8px 4px 40px;
         }
 
-        /* Header */
         .app-header {
             text-align: center;
             padding: 8px 0 4px;
@@ -92,7 +91,6 @@
             font-weight: 500;
         }
 
-        /* Vehicle Toggle */
         .vehicle-toggle-wrap {
             background: var(--surface);
             border-radius: var(--radius);
@@ -165,7 +163,6 @@
             transform: translateX(-50%) scaleX(1);
         }
 
-        /* Cards */
         .card {
             background: var(--surface);
             border-radius: var(--radius);
@@ -203,7 +200,6 @@
             transition: color var(--transition);
         }
 
-        /* Rate display */
         .rate-display {
             display: flex;
             align-items: center;
@@ -246,7 +242,6 @@
             color: var(--accent);
         }
 
-        /* Plate input */
         .plate-row {
             display: flex;
             gap: 8px;
@@ -277,7 +272,6 @@
             font-weight: 400;
         }
 
-        /* Buttons */
         .btn {
             padding: 12px 20px;
             border-radius: 25px;
@@ -349,7 +343,6 @@
             justify-content: center;
         }
 
-        /* Live tracking panel */
         .tracking-panel {
             background: var(--surface);
             border-radius: var(--radius);
@@ -437,7 +430,6 @@
             color: var(--danger);
         }
 
-        /* Mileage inputs row */
         .mileage-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -474,7 +466,6 @@
             box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.3) !important;
         }
 
-        /* Description */
         .desc-input {
             width: 100%;
             background: var(--surface2);
@@ -497,7 +488,6 @@
             color: var(--text3);
         }
 
-        /* History */
         .history-header {
             display: flex;
             align-items: center;
@@ -572,7 +562,6 @@
             justify-content: flex-end;
         }
 
-        /* Summary bar */
         .summary-bar {
             display: flex;
             gap: 12px;
@@ -595,7 +584,6 @@
             transition: color var(--transition);
         }
 
-        /* Toast */
         .toast {
             position: fixed;
             bottom: 30px;
@@ -626,7 +614,6 @@
             color: var(--danger);
         }
 
-        /* GPS unavailable banner */
         .gps-banner {
             background: var(--surface2);
             border: 1px solid #f0883e55;
@@ -640,7 +627,6 @@
             font-weight: 500;
         }
 
-        /* Scrollbar */
         ::-webkit-scrollbar {
             width: 4px;
         }
@@ -652,7 +638,6 @@
             border-radius: 4px;
         }
 
-        /* Responsive */
         @media (max-width: 380px) {
             .tracking-stats {
                 grid-template-columns: 1fr;
@@ -830,7 +815,7 @@
                 </div>
             </div>
             <button class="btn btn-outline btn-block" id="exportBtn" style="margin-top:14px;">
-                📥 Export All Data (JSON)
+                📥 Export All Data (CSV)
             </button>
         </div>
     </div>
@@ -839,7 +824,7 @@
     <div class="toast" id="toast"></div>
 
     <!-- Hidden download link -->
-    <a id="downloadLink" style="display:none;" download="drivelogger_data.json"></a>
+    <a id="downloadLink" style="display:none;"></a>
 
     <script>
         (function() {
@@ -908,11 +893,11 @@
                 vespaPlate: '',
             };
             let drives = [];
-            let activeDrive = null; // { vehicle, rate, startMileage, startDateTime, gpsDistance, lastPosition, watchId, accumulatedPositions }
+            let activeDrive = null;
             let gpsWatchId = null;
             let previousPosition = null;
             let accumulatedGpsDistance = 0;
-            let gpsAvailable = null; // null = unknown, true/false
+            let gpsAvailable = null;
             let durationInterval = null;
             let driveStartTimestamp = null;
 
@@ -934,13 +919,11 @@
                 } catch (e) {
                     console.warn('Failed to load from storage:', e);
                 }
-                // Load active drive
                 try {
                     const rawActive = localStorage.getItem(ACTIVE_DRIVE_KEY);
                     if (rawActive) {
                         const ad = JSON.parse(rawActive);
                         if (ad && ad.startDateTime && !ad.endDateTime) {
-                            // There was an active drive when the page was last open
                             activeDrive = ad;
                             activeDrive.gpsDistance = activeDrive.gpsDistance || 0;
                             activeDrive.accumulatedPositions = activeDrive.accumulatedPositions || 0;
@@ -972,7 +955,7 @@
                         ...activeDrive,
                         gpsDistance: accumulatedGpsDistance,
                         lastPosition: previousPosition,
-                        watchId: null, // can't serialize watchId
+                        watchId: null,
                     };
                     try {
                         localStorage.setItem(ACTIVE_DRIVE_KEY, JSON.stringify(ad));
@@ -1023,6 +1006,21 @@
                     ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
             }
 
+            function formatDateForCSV(isoString) {
+                if (!isoString) return '';
+                const d = new Date(isoString);
+                return d.getFullYear() + '-' +
+                    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(d.getDate()).padStart(2, '0');
+            }
+
+            function formatTimeForCSV(isoString) {
+                if (!isoString) return '';
+                const d = new Date(isoString);
+                return String(d.getHours()).padStart(2, '0') + ':' +
+                    String(d.getMinutes()).padStart(2, '0');
+            }
+
             function haversineDistance(lat1, lon1, lat2, lon2) {
                 const R = 6371;
                 const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -1041,6 +1039,112 @@
                 toast._timeout = setTimeout(() => {
                     toast.classList.remove('show');
                 }, 2200);
+            }
+
+            // ──────────────────────────────────────
+            // CSV Export (clean, semicolon-delimited)
+            // ──────────────────────────────────────
+            function exportData() {
+                if (drives.length === 0) {
+                    showToast('No drives to export.', 'error');
+                    return;
+                }
+
+                const rows = [];
+
+                // ── Header ──
+                const headers = [
+                    '#', 'Vehicle', 'Plate',
+                    'Start Date', 'Start Time',
+                    'End Date', 'End Time',
+                    'Start Mileage (km)', 'End Mileage (km)',
+                    'Odometer Dist (km)', 'GPS Dist (km)',
+                    'Duration (hh:mm:ss)', 'Duration (sec)',
+                    'Rate (€/km)', 'Cost (€)', 'Description'
+                ];
+                rows.push(headers.join(';'));
+
+                // ── Data rows (sorted newest first) ──
+                const sorted = [...drives].sort((a, b) => new Date(b.startDateTime) - new Date(a.startDateTime));
+
+                let index = 1;
+                sorted.forEach(d => {
+                    const startMileage = (d.startMileage !== null && d.startMileage !== undefined) ? d
+                        .startMileage : '';
+                    const endMileage = (d.endMileage !== null && d.endMileage !== undefined) ? d.endMileage :
+                        '';
+                    const odometerDist = (startMileage !== '' && endMileage !== '') ? Math.abs(endMileage -
+                        startMileage) : 0;
+                    const gpsDist = d.gpsDistance || 0;
+                    const dist = gpsDist > 0 ? gpsDist : odometerDist;
+                    const rate = d.rate || getCurrentRate();
+                    const cost = dist * rate;
+                    const duration = d.duration || 0;
+
+                    // Escape fields that contain semicolon, quotes, or newlines
+                    const escape = (val) => {
+                        if (val === null || val === undefined) return '';
+                        const str = String(val);
+                        if (str.includes(';') || str.includes('"') || str.includes('\n')) {
+                            return '"' + str.replace(/"/g, '""') + '"';
+                        }
+                        return str;
+                    };
+
+                    const row = [
+                        index++,
+                        escape(d.vehicle === 'car' ? 'Car' : 'Vespa'),
+                        escape(d.plate || ''),
+                        escape(formatDateForCSV(d.startDateTime)),
+                        escape(formatTimeForCSV(d.startDateTime)),
+                        escape(d.endDateTime ? formatDateForCSV(d.endDateTime) : ''),
+                        escape(d.endDateTime ? formatTimeForCSV(d.endDateTime) : ''),
+                        escape(startMileage !== '' ? startMileage : ''),
+                        escape(endMileage !== '' ? endMileage : ''),
+                        escape(odometerDist.toFixed(3)),
+                        escape(gpsDist.toFixed(3)),
+                        escape(formatDuration(duration)),
+                        escape(duration),
+                        escape(rate.toFixed(2)),
+                        escape(cost.toFixed(2)),
+                        escape(d.description || '')
+                    ];
+                    rows.push(row.join(';'));
+                });
+
+                // ── Footer summary (as comment rows, single column) ──
+                const totalDist = sorted.reduce((sum, d) => {
+                    const sm = (d.startMileage !== null && d.startMileage !== undefined) ? d.startMileage : 0;
+                    const em = (d.endMileage !== null && d.endMileage !== undefined) ? d.endMileage : 0;
+                    const odo = (sm && em) ? Math.abs(em - sm) : 0;
+                    const gps = d.gpsDistance || 0;
+                    return sum + (gps > 0 ? gps : odo);
+                }, 0);
+                const totalCost = sorted.reduce((sum, d) => {
+                    const sm = (d.startMileage !== null && d.startMileage !== undefined) ? d.startMileage : 0;
+                    const em = (d.endMileage !== null && d.endMileage !== undefined) ? d.endMileage : 0;
+                    const odo = (sm && em) ? Math.abs(em - sm) : 0;
+                    const gps = d.gpsDistance || 0;
+                    const dist = gps > 0 ? gps : odo;
+                    const rate = d.rate || getCurrentRate();
+                    return sum + dist * rate;
+                }, 0);
+
+                rows.push('');
+                rows.push('# Totals');
+                rows.push('Total Distance (km);' + totalDist.toFixed(3));
+                rows.push('Total Cost (€);' + totalCost.toFixed(2));
+                rows.push('Total Drives;' + drives.length);
+
+                const csvStr = rows.join('\n');
+                // Add BOM for Excel UTF-8 detection
+                const blob = new Blob(['\uFEFF' + csvStr], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                downloadLink.href = url;
+                downloadLink.download = 'drivelogger_export_' + new Date().toISOString().slice(0, 10) + '.csv';
+                downloadLink.click();
+                URL.revokeObjectURL(url);
+                showToast('CSV exported! 📥 ' + drives.length + ' drives', 'success');
             }
 
             // ──────────────────────────────────────
@@ -1078,7 +1182,7 @@
                     let totalDist = 0;
                     let totalCost = 0;
                     const sortedDrives = [...drives].sort((a, b) => new Date(b.startDateTime) - new Date(a
-                        .startDateTime));
+                    .startDateTime));
                     sortedDrives.forEach(d => {
                         const dist = d.gpsDistance > 0 ? d.gpsDistance : (d.endMileage && d
                             .startMileage ? Math.abs(d.endMileage - d.startMileage) : 0);
@@ -1101,7 +1205,7 @@
                     </div>
                     ${d.description ? '<div class="drive-desc">📝 ' + escapeHTML(d.description) + '</div>' : ''}
                     <div style="font-size:0.7rem;color:var(--text3);">
-                      GPS: ${d.gpsDistance > 0 ? formatDistance(d.gpsDistance) : 'N/A'} | Odo: ${d.startMileage ? d.startMileage + '→' + (d.endMileage || '?') + ' km' : 'N/A'}
+                      GPS: ${d.gpsDistance > 0 ? formatDistance(d.gpsDistance) : 'N/A'} | Odo: ${d.startMileage !== null ? d.startMileage + '→' + (d.endMileage !== null ? d.endMileage : '?') + ' km' : 'N/A'}
                     </div>
                     <div class="drive-actions">
                       <button class="btn btn-sm btn-outline delete-drive-btn" data-id="${d.id}">🗑️</button>
@@ -1111,7 +1215,6 @@
                     sumTotalDist.textContent = formatDistance(totalDist);
                     sumTotalCost.textContent = formatCurrency(totalCost);
                     sumTotalDrives.textContent = drives.length;
-                    // Attach delete listeners
                     drivesList.querySelectorAll('.delete-drive-btn').forEach(btn => {
                         btn.addEventListener('click', function() {
                             const id = this.getAttribute('data-id');
@@ -1174,7 +1277,7 @@
                         const lat = position.coords.latitude;
                         const lon = position.coords.longitude;
                         const accuracy = position.coords.accuracy;
-                        const speed = position.coords.speed; // m/s
+                        const speed = position.coords.speed;
 
                         if (accuracy < 30) {
                             gpsStatus.textContent = '● GPS active — accuracy: ' + Math.round(accuracy) +
@@ -1198,14 +1301,11 @@
                         if (previousPosition && previousPosition.lat !== null) {
                             const dist = haversineDistance(previousPosition.lat, previousPosition.lon, lat,
                                 lon);
-                            // Filter unrealistic jumps (>500m between readings likely means GPS glitch or tunnel exit)
                             if (dist < 0.5) {
                                 accumulatedGpsDistance += dist;
                             } else if (dist < 5) {
-                                // Could be real but suspicious — add with a cap
                                 accumulatedGpsDistance += Math.min(dist, 0.3);
                             }
-                            // If >5km, ignore (GPS glitch)
                         }
                         previousPosition = { lat, lon, timestamp: position.timestamp };
                         if (activeDrive) {
@@ -1235,12 +1335,11 @@
             }
 
             // ──────────────────────────────────────
-            // Drive Actions (with start mileage validation)
+            // Drive Actions
             // ──────────────────────────────────────
             function startDrive() {
                 const startMileageValue = startMileageInput.value.trim();
                 if (startMileageValue === '' || isNaN(parseFloat(startMileageValue))) {
-                    // Highlight the input and show a toast
                     startMileageInput.classList.add('input-error');
                     startMileageInput.focus();
                     showToast('⚠️ Please enter the start odometer reading before starting.', 'error');
@@ -1249,7 +1348,6 @@
                     }, 2500);
                     return;
                 }
-                // Remove error state if any
                 startMileageInput.classList.remove('input-error');
 
                 const startMileage = parseFloat(startMileageValue);
@@ -1273,12 +1371,10 @@
                 previousPosition = null;
                 driveStartTimestamp = Date.now();
                 startGpsTracking();
-                // UI switch
                 idlePanel.style.display = 'none';
                 trackingPanel.style.display = 'block';
                 summaryPanel.style.display = 'none';
                 updateLiveStats();
-                // Start duration updater
                 if (durationInterval) clearInterval(durationInterval);
                 durationInterval = setInterval(() => {
                     updateLiveStats();
@@ -1305,7 +1401,6 @@
                     activeDrive.gpsDistance = accumulatedGpsDistance;
                     activeDrive.lastPosition = previousPosition;
                 }
-                // Populate summary
                 summaryGpsDist.textContent = formatDistance(accumulatedGpsDistance);
                 summaryDuration.textContent = formatDuration(elapsedSec);
                 summaryStart.textContent = formatDateTime(activeDrive?.startDateTime || now);
@@ -1314,11 +1409,9 @@
                 summaryEndMileage.value = '';
                 summaryDesc.value = '';
                 odometerDiffDisplay.textContent = '';
-                // UI switch
                 idlePanel.style.display = 'none';
                 trackingPanel.style.display = 'none';
                 summaryPanel.style.display = 'block';
-                // Update odometer diff on input
                 updateOdometerDiff();
                 saveActiveDriveToStorage();
                 showToast('Drive ended. Enter end odometer & save.', '');
@@ -1351,7 +1444,6 @@
                 activeDrive.duration = activeDrive.duration || Math.floor((Date.now() - driveStartTimestamp) / 1000);
                 activeDrive.gpsDistance = accumulatedGpsDistance;
                 drives.push({ ...activeDrive });
-                // Clear active drive
                 activeDrive = null;
                 accumulatedGpsDistance = 0;
                 previousPosition = null;
@@ -1364,7 +1456,6 @@
                 }
                 saveToStorage();
                 updateHistoryUI();
-                // Reset UI
                 idlePanel.style.display = 'block';
                 trackingPanel.style.display = 'none';
                 summaryPanel.style.display = 'none';
@@ -1401,22 +1492,6 @@
                 gpsStatus.textContent = '● Ready';
                 gpsStatus.className = 'gps-status';
                 showToast('Drive discarded', '');
-            }
-
-            function exportData() {
-                const exportObj = {
-                    exportDate: new Date().toISOString(),
-                    settings: { ...settings },
-                    drives: [...drives],
-                };
-                const jsonStr = JSON.stringify(exportObj, null, 2);
-                const blob = new Blob([jsonStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                downloadLink.href = url;
-                downloadLink.download = 'drivelogger_export_' + new Date().toISOString().slice(0, 10) + '.json';
-                downloadLink.click();
-                URL.revokeObjectURL(url);
-                showToast('Data exported! 📥', 'success');
             }
 
             // ──────────────────────────────────────
@@ -1476,9 +1551,6 @@
             summaryEndMileage.addEventListener('input', updateOdometerDiff);
             exportBtn.addEventListener('click', exportData);
 
-            // ──────────────────────────────────────
-            // Keyboard shortcut for rate editor
-            // ──────────────────────────────────────
             rateInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') saveRateBtn.click();
                 if (e.key === 'Escape') cancelRateBtn.click();
@@ -1493,9 +1565,7 @@
                 updateHistoryUI();
                 updateSettingsCardAccent();
 
-                // Check if there's an active drive to resume
                 if (activeDrive && !activeDrive.endDateTime) {
-                    // Resume active drive
                     accumulatedGpsDistance = activeDrive.gpsDistance || 0;
                     previousPosition = activeDrive.lastPosition || null;
                     driveStartTimestamp = new Date(activeDrive.startDateTime).getTime();
@@ -1516,7 +1586,6 @@
                     }, 500);
                     showToast('Resumed active drive from previous session.', 'success');
                 } else {
-                    // Ensure clean state
                     activeDrive = null;
                     accumulatedGpsDistance = 0;
                     previousPosition = null;
@@ -1527,7 +1596,6 @@
                     summaryPanel.style.display = 'none';
                 }
 
-                // Check GPS availability
                 if (navigator.geolocation && !activeDrive) {
                     navigator.geolocation.getCurrentPosition(
                         () => { gpsAvailable = true;
@@ -1541,7 +1609,6 @@
                     gpsBanner.style.display = 'flex';
                 }
 
-                // Update live stats periodically if tracking
                 if (activeDrive && !activeDrive.endDateTime) {
                     updateLiveStats();
                 }
@@ -1554,22 +1621,18 @@
 
             init();
 
-            // ──────────────────────────────────────
-            // Handle page unload — save active drive
-            // ──────────────────────────────────────
             window.addEventListener('beforeunload', () => {
                 saveActiveDriveToStorage();
                 saveToStorage();
             });
 
-            // Also save periodically
             setInterval(() => {
                 if (activeDrive && !activeDrive.endDateTime) {
                     saveActiveDriveToStorage();
                 }
             }, 10000);
 
-            console.log('%c🚗 DriveLogger Ready %c| %cDark Mode • GPS • JSON Export',
+            console.log('%c🚗 DriveLogger Ready %c| %cDark Mode • GPS • CSV Export',
                 'font-weight:bold;font-size:14px;',
                 '',
                 'color:#8b949e;');
