@@ -550,7 +550,7 @@
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
-            margin-top: 16px; /* increased gap from 12px to 16px */
+            margin-top: 16px;
             margin-bottom: 12px;
         }
         .summary-chip {
@@ -568,6 +568,20 @@
         .summary-chip strong {
             color: var(--accent);
             transition: color var(--transition);
+        }
+
+        .veh-icon-sm {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+        }
+        .veh-icon-sm svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
         }
 
         .drive-card {
@@ -598,16 +612,6 @@
             display: flex;
             align-items: center;
             gap: 8px;
-        }
-        .drive-card .drive-vehicle .veh-icon-sm {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-        }
-        .drive-card .drive-vehicle .veh-icon-sm svg {
-            width: 100%;
-            height: 100%;
-            fill: currentColor;
         }
         .drive-card .drive-date {
             font-size: 0.75rem;
@@ -770,30 +774,30 @@
         <!-- ── Settings Card ── -->
         <div class="card" id="settingsCard">
             <div class="card-header">
-                <span class="card-title">⚙️ Settings — <span id="activeVehicleLabel">Car</span></span>
+                <span class="card-title">Settings — <span id="activeVehicleLabel">Car</span></span>
             </div>
             <div class="plate-row" style="margin-bottom:10px;">
                 <input type="text" class="plate-input" id="plateInput" placeholder="Plate number (e.g. AB-123-CD)" maxlength="15">
-                <button class="btn btn-sm btn-outline" id="savePlateBtn">💾 Save Plate</button>
+                <button class="btn btn-sm btn-outline" id="savePlateBtn">Save Plate</button>
             </div>
             <div class="rate-display">
                 <div class="rate-badge">
                     Rate: <span class="rate-value" id="rateDisplay">0.50 €/km</span>
                 </div>
-                <button class="rate-edit-btn" id="editRateBtn">✏️ Edit Rate</button>
+                <button class="rate-edit-btn" id="editRateBtn">Edit Rate</button>
                 <span style="font-size:0.7rem;color:var(--text3);margin-left:4px;" id="platePreview"></span>
             </div>
             <div id="rateEditor" style="display:none; margin-top:10px; gap:8px; align-items:center; flex-wrap:wrap;">
                 <input type="number" id="rateInput" step="0.01" min="0.01" max="10" value="0.50" style="width:90px; background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:8px 10px; border-radius:var(--radius-xs); font-family:var(--font); font-size:0.9rem; outline:none;">
                 <span style="color:var(--text2);">€/km</span>
-                <button class="btn btn-sm btn-primary" id="saveRateBtn">✓ Save</button>
-                <button class="btn btn-sm btn-outline" id="cancelRateBtn">✕</button>
+                <button class="btn btn-sm btn-primary" id="saveRateBtn">Save</button>
+                <button class="btn btn-sm btn-outline" id="cancelRateBtn">Cancel</button>
             </div>
         </div>
 
         <!-- ── GPS Status Banner ── -->
         <div class="gps-banner" id="gpsBanner" style="display:none;">
-            ⚠️ GPS is unavailable on this device. You can still log drives manually using odometer readings.
+            GPS is unavailable on this device. You can still log drives manually using odometer readings.
         </div>
 
         <!-- ── Active Drive / Idle Panel ── -->
@@ -825,29 +829,32 @@
                     <span style="font-weight:700;font-size:1rem;display:flex;align-items:center;gap:8px;">
                         <span class="tracking-dot"></span> Tracking Active
                     </span>
-                    <span style="font-size:0.8rem;color:var(--text3);" id="trackingVehicleLabel">Car</span>
+                    <span style="font-size:0.8rem;color:var(--text3);display:flex;align-items:center;gap:6px;" id="trackingVehicleLabel">
+                        <span class="veh-icon-sm"><svg viewBox="0 0 122.88 35.03" fill="currentColor"><path d="M99.42,13.57c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73 C88.69,18.37,93.49,13.57,99.42,13.57z M79.05,5c-0.59,1.27-1.06,2.69-1.42,4.23c-0.82,2.57,0.39,3.11,3.19,2.06 c2.06-1.23,4.12-2.47,6.18-3.7c1.05-0.74,1.55-1.47,1.38-2.19c-0.34-1.42-3.08-2.16-5.33-2.6C80.19,2.23,80.39,2.11,79.05,5z M23.86,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99c-2.75,0-4.99-2.23-4.99-4.99 C18.87,21.54,21.1,19.31,23.86,19.31z M99.42,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99 c-2.75,0-4.99-2.23-4.99-4.99C94.43,21.54,96.66,19.31,99.42,19.31z M46.14,12.5c2.77-2.97,5.97-4.9,9.67-6.76 c8.1-4.08,13.06-3.58,21.66-3.58l-2.89,7.5c-1.21,1.6-2.58,2.73-4.66,2.84H46.14z M23.86,13.57 c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73C13.13,18.37,17.93,13.57,23.86,13.57z M40.82,10.3c3.52-2.19,7.35-4.15,11.59-5.82c12.91-5.09,22.78-6,36.32-1.9c4.08,1.55,8.16,3.1,12.24,4.06 c4.03,0.96,21.48,1.88,21.91,4.81l-4.31,5.15c1.57,1.36,2.85,3.03,3.32,5.64c-0.13,1.61-0.57,2.96-1.33,4.04 c-1.29,1.85-5.07,3.76-7.11,2.67c-0.65-0.35-1.02-1.05-1.01-2.24c0.06-23.9-28.79-21.18-26.62,2.82H35.48 C44.8,5.49,5.04,5.4,12.1,28.7C9.62,31.38,3.77,27.34,0,18.75c1.03-1.02,2.16-1.99,3.42-2.89c-0.06-0.05,0.06,0.19-0.15-0.17 c-0.21-0.36,0.51-1.87,1.99-2.74C13.02,8.4,31.73,8.52,40.82,10.3z"/></svg></span>
+                        Car
+                    </span>
                 </div>
                 <div class="tracking-stats">
                     <div class="tracking-stat">
-                        <div class="stat-label">📏 GPS Distance</div>
+                        <div class="stat-label">GPS Distance</div>
                         <div class="stat-value highlight" id="liveDistance">0.00 km</div>
                     </div>
                     <div class="tracking-stat">
-                        <div class="stat-label">⏱️ Duration</div>
+                        <div class="stat-label">Duration</div>
                         <div class="stat-value" id="liveDuration">00:00:00</div>
                     </div>
                     <div class="tracking-stat">
-                        <div class="stat-label">🏎️ Speed</div>
+                        <div class="stat-label">Speed</div>
                         <div class="stat-value" id="liveSpeed">-- km/h</div>
                     </div>
                     <div class="tracking-stat">
-                        <div class="stat-label">💰 Est. Cost</div>
+                        <div class="stat-label">Est. Cost</div>
                         <div class="stat-value highlight" id="liveCost">0.00 €</div>
                     </div>
                 </div>
                 <div class="gps-status" id="gpsStatus">● Acquiring GPS signal...</div>
                 <button class="btn btn-danger btn-block" id="endDriveBtn" style="margin-top:14px;">
-                    ⏹️ End Drive
+                    End Drive
                 </button>
             </div>
 
@@ -874,8 +881,8 @@
                 <div style="font-size:0.75rem;color:var(--text3);margin-bottom:8px;" id="odometerDiffDisplay"></div>
                 <input type="text" class="desc-input" id="summaryDesc" placeholder="What was this drive about? (optional)" maxlength="200" style="margin-bottom:12px;">
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <button class="btn btn-primary" id="saveDriveBtn" style="flex:1;">💾 Save Drive</button>
-                    <button class="btn btn-outline" id="discardDriveBtn">🗑️ Discard</button>
+                    <button class="btn btn-primary" id="saveDriveBtn" style="flex:1;">Save Drive</button>
+                    <button class="btn btn-outline" id="discardDriveBtn">Discard</button>
                 </div>
             </div>
         </div>
@@ -897,7 +904,7 @@
                 </div>
             </div>
             <button class="btn btn-outline btn-block" id="exportBtn" style="margin-top:14px;">
-                📥 Export All Data (CSV)
+                Export All Data (CSV)
             </button>
         </div>
     </div>
@@ -919,6 +926,7 @@
             const btnCar = document.getElementById('btnCar');
             const btnMotorcycle = document.getElementById('btnMotorcycle');
             const activeVehicleLabel = document.getElementById('activeVehicleLabel');
+            const trackingVehicleLabel = document.getElementById('trackingVehicleLabel');
             const plateInput = document.getElementById('plateInput');
             const platePreview = document.getElementById('platePreview');
             const rateDisplay = document.getElementById('rateDisplay');
@@ -933,7 +941,6 @@
             const startMileageInput = document.getElementById('startMileage');
             const idlePanel = document.getElementById('idlePanel');
             const trackingPanel = document.getElementById('trackingPanel');
-            const trackingVehicleLabel = document.getElementById('trackingVehicleLabel');
             const liveDistance = document.getElementById('liveDistance');
             const liveDuration = document.getElementById('liveDuration');
             const liveSpeed = document.getElementById('liveSpeed');
@@ -1178,17 +1185,26 @@
                 downloadLink.download = 'drivelogger_export_' + new Date().toISOString().slice(0, 10) + '.csv';
                 downloadLink.click();
                 URL.revokeObjectURL(url);
-                showToast('CSV exported! 📥 ' + drives.length + ' drives', 'success');
+                showToast('CSV exported! ' + drives.length + ' drives', 'success');
             }
 
             // ── UI updates ──
+            function getVehicleIconSVG(vehicle) {
+                return vehicle === 'car' ? carIconSVG : motorcycleIconSVG;
+            }
+
             function updateVehicleUI() {
                 body.className = currentVehicle === 'car' ? 'vehicle-car' : 'vehicle-motorcycle';
                 btnCar.classList.toggle('active', currentVehicle === 'car');
                 btnMotorcycle.classList.toggle('active', currentVehicle === 'motorcycle');
                 activeVehicleLabel.textContent = currentVehicle === 'car' ? 'Car' : 'Motorcycle';
                 startDriveLabel.textContent = currentVehicle === 'car' ? 'Car' : 'Motorcycle';
-                trackingVehicleLabel.textContent = currentVehicle === 'car' ? '🚗 Car' : '🏍️ Motorcycle';
+
+                // Update tracking panel label with SVG icon
+                const iconSVG = getVehicleIconSVG(currentVehicle);
+                const vehicleName = currentVehicle === 'car' ? 'Car' : 'Motorcycle';
+                trackingVehicleLabel.innerHTML = `<span class="veh-icon-sm">${iconSVG}</span> ${vehicleName}`;
+
                 rateDisplay.textContent = formatCurrency(getCurrentRate()) + ' /km';
                 rateInput.value = getCurrentRate().toFixed(2);
                 plateInput.value = getCurrentPlate();
@@ -1202,15 +1218,8 @@
 
                 settingsCard.style.borderLeftColor = accent;
                 document.documentElement.style.setProperty('--accent-glow', glow);
-                // Update CSS vars for accent and accent2
                 document.documentElement.style.setProperty('--accent', accent);
                 document.documentElement.style.setProperty('--accent2', accent2);
-                // Also update the rate badge and other elements that use var(--accent)
-                // They will update automatically via CSS.
-            }
-
-            function getVehicleIconSVG(vehicle) {
-                return vehicle === 'car' ? carIconSVG : motorcycleIconSVG;
             }
 
             function updateHistoryUI() {
@@ -1237,7 +1246,6 @@
                         card.className = 'drive-card';
                         const vehLabel = d.vehicle === 'car' ? 'Car' : 'Motorcycle';
                         const iconSVG = getVehicleIconSVG(d.vehicle);
-                        // wrap the SVG in a span with class veh-icon-sm
                         const iconHtml = `<span class="veh-icon-sm">${iconSVG}</span>`;
                         card.innerHTML = `
                             <div class="drive-top">
@@ -1287,7 +1295,7 @@
                 if (!navigator.geolocation) {
                     gpsAvailable = false;
                     gpsBanner.style.display = 'flex';
-                    gpsStatus.textContent = '⚠️ GPS not supported on this device';
+                    gpsStatus.textContent = 'GPS not supported on this device';
                     gpsStatus.className = 'gps-status poor';
                     return;
                 }
@@ -1340,7 +1348,7 @@
                         console.warn('GPS error:', error);
                         gpsAvailable = false;
                         gpsBanner.style.display = 'flex';
-                        gpsStatus.textContent = '⚠️ GPS error: ' + error.message;
+                        gpsStatus.textContent = 'GPS error: ' + error.message;
                         gpsStatus.className = 'gps-status poor';
                         liveSpeed.textContent = '-- km/h';
                     }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 5000 }
@@ -1358,7 +1366,7 @@
                 if (startMileageValue === '' || isNaN(parseFloat(startMileageValue))) {
                     startMileageInput.classList.add('input-error');
                     startMileageInput.focus();
-                    showToast('⚠️ Please enter the start odometer reading before starting.', 'error');
+                    showToast('Please enter the start odometer reading before starting.', 'error');
                     setTimeout(() => startMileageInput.classList.remove('input-error'), 2500);
                     return;
                 }
@@ -1434,12 +1442,12 @@
                 const endVal = parseFloat(summaryEndMileage.value);
                 if (!isNaN(startVal) && !isNaN(endVal) && endVal >= startVal) {
                     const diff = endVal - startVal;
-                    odometerDiffDisplay.textContent = '📏 Odometer distance: ' + formatDistance(diff) +
+                    odometerDiffDisplay.textContent = 'Odometer distance: ' + formatDistance(diff) +
                         ' (vs GPS: ' + formatDistance(accumulatedGpsDistance) + ')';
                     odometerDiffDisplay.style.color = Math.abs(diff - accumulatedGpsDistance) < 0.5 ? 'var(--success)' :
                         'var(--info)';
                 } else if (!isNaN(startVal) && !isNaN(endVal) && endVal < startVal) {
-                    odometerDiffDisplay.textContent = '⚠️ End odometer is less than start!';
+                    odometerDiffDisplay.textContent = 'End odometer is less than start!';
                     odometerDiffDisplay.style.color = 'var(--danger)';
                 } else {
                     odometerDiffDisplay.textContent = '';
@@ -1476,7 +1484,7 @@
                 liveCost.textContent = '0.00 €';
                 gpsStatus.textContent = '● Ready';
                 gpsStatus.className = 'gps-status';
-                showToast('Drive saved! ✅', 'success');
+                showToast('Drive saved!', 'success');
             }
 
             function discardDrive() {
@@ -1602,7 +1610,7 @@
                     gpsBanner.style.display = 'flex';
                 }
 
-                console.log('🚗 DriveLogger ready —', currentVehicle, '| Rate:', formatCurrency(getCurrentRate()) +
+                console.log('DriveLogger ready —', currentVehicle, '| Rate:', formatCurrency(getCurrentRate()) +
                     '/km', '| Drives:', drives.length);
             }
 
@@ -1614,7 +1622,7 @@
                 if (activeDrive && !activeDrive.endDateTime) saveActiveDriveToStorage();
             }, 10000);
 
-            console.log('%c🚗 DriveLogger Ready %c| %cDark Mode • GPS • CSV Export',
+            console.log('%cDriveLogger Ready %c| %cDark Mode • GPS • CSV Export',
                 'font-weight:bold;font-size:14px;', '', 'color:#8b949e;');
         })();
     </script>
