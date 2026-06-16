@@ -5,9 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>DriveLogger</title>
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
     <!-- Favicon / App Icon – use your own app-logo.png -->
     <link rel="icon" href="app-logo.png" type="image/png">
     <link rel="apple-touch-icon" href="app-logo.png">
+
+    <!-- Theme color for mobile browser -->
+    <meta name="theme-color" content="#0d1117">
 
     <style>
         :root {
@@ -914,6 +920,15 @@
 
     <!-- Hidden download link -->
     <a id="downloadLink" style="display:none;"></a>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker registered successfully.'))
+                .catch(err => console.warn('Service Worker registration failed:', err));
+        }
+    </script>
 
     <script>
         (function() {
