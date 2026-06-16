@@ -18,9 +18,9 @@
             --text: #e6edf3;
             --text2: #b0b8c4;
             --text3: #8b949e;
-            --accent: #f59e0b;
-            --accent2: #d97706;
-            --accent-glow: rgba(245, 158, 11, 0.25);
+            --accent: #99bef5;
+            --accent2: #7aa3d9;
+            --accent-glow: rgba(153, 190, 245, 0.25);
             --success: #3fb950;
             --danger: #f85149;
             --info: #58a6ff;
@@ -33,10 +33,10 @@
             --card-shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
         }
 
-        body.vehicle-vespa {
-            --accent: #06d6a0;
-            --accent2: #05b88a;
-            --accent-glow: rgba(6, 214, 160, 0.25);
+        body.vehicle-motorcycle {
+            --accent: #e3890b;
+            --accent2: #b87109;
+            --accent-glow: rgba(227, 137, 11, 0.25);
         }
 
         * {
@@ -90,17 +90,15 @@
             width: 48px;
             height: 48px;
             border-radius: 14px;
-            background: linear-gradient(135deg, var(--accent), var(--accent2));
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 16px var(--accent-glow);
-            transition: background var(--transition), box-shadow var(--transition);
             overflow: hidden;
+            background: transparent;
         }
         .app-logo-wrap img {
-            width: 80%;
-            height: 80%;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
             transition: transform 0.3s ease;
         }
@@ -155,7 +153,7 @@
             z-index: 0;
             width: calc(50% - 4px);
         }
-        body.vehicle-vespa .vehicle-toggle-wrap::before {
+        body.vehicle-motorcycle .vehicle-toggle-wrap::before {
             transform: translateX(100%);
         }
         .vehicle-btn {
@@ -184,11 +182,21 @@
         .vehicle-btn.active {
             color: #fff;
         }
-        .vehicle-btn .veh-emoji {
-            font-size: 1.4rem;
+        .vehicle-btn .veh-icon {
+            width: 26px;
+            height: 26px;
+            flex-shrink: 0;
             transition: transform var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .vehicle-btn.active .veh-emoji {
+        .vehicle-btn .veh-icon svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
+        }
+        .vehicle-btn.active .veh-icon {
             transform: scale(1.15);
         }
         .vehicle-indicator {
@@ -339,7 +347,7 @@
         }
         .btn-primary {
             background: var(--accent);
-            color: #000;
+            color: #fff;
             box-shadow: 0 4px 16px var(--accent-glow);
             font-size: 1rem;
             padding: 14px 28px;
@@ -531,12 +539,37 @@
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 8px;
+            margin-bottom: 6px;
         }
         .history-count {
             font-size: 0.8rem;
             color: var(--text3);
             font-weight: 500;
         }
+        .summary-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px; /* increased gap from 12px to 16px */
+            margin-bottom: 12px;
+        }
+        .summary-chip {
+            background: var(--surface2);
+            border-radius: 20px;
+            padding: 8px 14px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text2);
+        }
+        .summary-chip strong {
+            color: var(--accent);
+            transition: color var(--transition);
+        }
+
         .drive-card {
             background: var(--surface);
             border-radius: var(--radius-sm);
@@ -564,7 +597,17 @@
             font-size: 0.9rem;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+        }
+        .drive-card .drive-vehicle .veh-icon-sm {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        .drive-card .drive-vehicle .veh-icon-sm svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
         }
         .drive-card .drive-date {
             font-size: 0.75rem;
@@ -597,28 +640,6 @@
             display: flex;
             gap: 6px;
             justify-content: flex-end;
-        }
-
-        .summary-bar {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .summary-chip {
-            background: var(--surface2);
-            border-radius: 20px;
-            padding: 8px 14px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: var(--text2);
-        }
-        .summary-chip strong {
-            color: var(--accent);
-            transition: color var(--transition);
         }
 
         .toast {
@@ -704,6 +725,10 @@
                 height: 40px;
                 border-radius: 12px;
             }
+            .vehicle-btn .veh-icon {
+                width: 22px;
+                height: 22px;
+            }
         }
     </style>
 </head>
@@ -712,7 +737,6 @@
         <!-- ── Header with Logo ── -->
         <header class="app-header">
             <div class="app-logo-wrap" id="logoWrap">
-                <!-- Your app-logo.png will be displayed here -->
                 <img src="app-logo.png" alt="DriveLogger Logo" id="logoImg">
             </div>
             <div class="app-title-group">
@@ -724,11 +748,21 @@
         <!-- ── Vehicle Toggle ── -->
         <div class="vehicle-toggle-wrap" id="vehicleToggle">
             <button class="vehicle-btn active" data-vehicle="car" id="btnCar">
-                <span class="veh-emoji">🚗</span> Car
+                <span class="veh-icon">
+                    <svg viewBox="0 0 122.88 35.03" fill="currentColor">
+                        <path d="M99.42,13.57c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73 C88.69,18.37,93.49,13.57,99.42,13.57z M79.05,5c-0.59,1.27-1.06,2.69-1.42,4.23c-0.82,2.57,0.39,3.11,3.19,2.06 c2.06-1.23,4.12-2.47,6.18-3.7c1.05-0.74,1.55-1.47,1.38-2.19c-0.34-1.42-3.08-2.16-5.33-2.6C80.19,2.23,80.39,2.11,79.05,5z M23.86,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99c-2.75,0-4.99-2.23-4.99-4.99 C18.87,21.54,21.1,19.31,23.86,19.31z M99.42,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99 c-2.75,0-4.99-2.23-4.99-4.99C94.43,21.54,96.66,19.31,99.42,19.31z M46.14,12.5c2.77-2.97,5.97-4.9,9.67-6.76 c8.1-4.08,13.06-3.58,21.66-3.58l-2.89,7.5c-1.21,1.6-2.58,2.73-4.66,2.84H46.14z M23.86,13.57 c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73C13.13,18.37,17.93,13.57,23.86,13.57z M40.82,10.3c3.52-2.19,7.35-4.15,11.59-5.82c12.91-5.09,22.78-6,36.32-1.9c4.08,1.55,8.16,3.1,12.24,4.06 c4.03,0.96,21.48,1.88,21.91,4.81l-4.31,5.15c1.57,1.36,2.85,3.03,3.32,5.64c-0.13,1.61-0.57,2.96-1.33,4.04 c-1.29,1.85-5.07,3.76-7.11,2.67c-0.65-0.35-1.02-1.05-1.01-2.24c0.06-23.9-28.79-21.18-26.62,2.82H35.48 C44.8,5.49,5.04,5.4,12.1,28.7C9.62,31.38,3.77,27.34,0,18.75c1.03-1.02,2.16-1.99,3.42-2.89c-0.06-0.05,0.06,0.19-0.15-0.17 c-0.21-0.36,0.51-1.87,1.99-2.74C13.02,8.4,31.73,8.52,40.82,10.3z"/>
+                    </svg>
+                </span>
+                Car
                 <span class="vehicle-indicator"></span>
             </button>
-            <button class="vehicle-btn" data-vehicle="vespa" id="btnVespa">
-                <span class="veh-emoji">🛵</span> Vespa
+            <button class="vehicle-btn" data-vehicle="motorcycle" id="btnMotorcycle">
+                <span class="veh-icon">
+                    <svg viewBox="0 0 122.88 66.83" fill="currentColor">
+                        <path d="M61.7,17.72c9.72-2.36,21.24-2.33,30.28-1.54C84.25,29.95,67.62,28.03,61.7,17.72z M25.18,57.6 l-4.13-4.13v5.72C22.58,58.99,23.98,58.43,25.18,57.6z M18.3,59.16v-5.68l-4.03,4.03 C15.44,58.35,16.81,58.92,18.3,59.16z M12.28,55.6l4.07-4.07h-5.91C10.72,53.04,11.36,54.43,12.28,55.6z M10.32,48.77h6.03l-4.41-4.41C11.06,45.64,10.49,47.14,10.32,48.77z M13.82,42.34l4.48,4.48v-6.47 C16.62,40.61,15.09,41.31,13.82,42.34z M21.06,40.31v6.5l4.58-4.58C24.34,41.22,22.77,40.54,21.06,40.31z M27.55,44.23l-4.54,4.54h6.26C29.09,47.08,28.48,45.53,27.55,44.23z M29.15,51.52h-6.14l4.2,4.2 C28.17,54.53,28.85,53.09,29.15,51.52z M110.91,57.79l-4.31-4.31v5.77C108.18,59.11,109.65,58.59,110.91,57.79z M103.84,59.07 v-5.6l-3.84,3.84C101.12,58.16,102.42,58.78,103.84,59.07z M98.08,55.33l3.04-3.04l-4.38,0.4C97.05,53.65,97.51,54.54,98.08,55.33z M97.99,44.86l-0.22-0.22l-0.08,0.13L97.99,44.86z M99.57,42.55l3.91,3.91c0.11-0.09,0.23-0.18,0.36-0.26v-5.76 C102.23,40.77,100.77,41.51,99.57,42.55z M106.6,40.26v5.33c0.33,0.05,0.65,0.14,0.96,0.27l3.82-3.82 C110.02,41.05,108.38,40.41,106.6,40.26z M113.36,43.96l-3.79,3.79c0.16,0.32,0.28,0.66,0.34,1.02h5.36 C115.09,46.97,114.4,45.32,113.36,43.96z M115.16,51.52h-5.71c-0.11,0.19-0.23,0.36-0.37,0.52l3.93,3.93 C114.08,54.73,114.84,53.21,115.16,51.52z M41.6,9.27c1.16,0.42,1.71,1.57,1.05,2.98c-0.89,1.89-1.88,1.83-3.69,2.29 l-1.15,0.29c-1.47,0.4-2.66,0.39-3.49,0.11l-1.04,0.22l-1,2.16c4.1,1,7.87-0.59,11.39-4.15c5.05-0.79,9.93-0.31,14.59,1.87 c0.42,4.29,1.72,7.56,3.73,10c6.25,7.56,17.94,6.94,25.7,2.07c3.65-2.29,6.66-5.57,9.07-9.76c5.34-0.02,10.62,0.28,15.8,1.1 l1.54,3.51C94.89,22.22,83.5,35.66,78.98,56.6H45.08c-2.27-13.18-8.66-21.8-17.72-27.47l2.47,1.8l-1.69,3.92 c5.21,2.93,8.73,8.5,8.73,14.9c0,9.43-7.65,17.08-17.08,17.08S2.71,59.19,2.71,49.75c0-8.35,6-15.31,13.92-16.79 c-4.53,0.49-9.71,2.11-15.43,4.66L0,35.32c5.1-4.62,12.93-7.45,24.42-7.88c-3.85-2.03-8.11-3.61-12.68-4.85 C17.25,11.86,24.28,4.01,33.35,0l1.32,2.19c-3.04,3.46-5.5,7.68-7.35,12.72c0.8,0.57,1.59,1.05,2.36,1.43l1.39-2.98 c0.21-0.44,0.62-0.73,1.07-0.79l0.96-0.2c0.04-0.1,0.1-0.21,0.16-0.32c0.95-1.68,2.9-2.1,4.77-2.49C39.18,9.35,40.47,8.86,41.6,9.27z M110.49,23.7l3.55-0.49l8.46,8.9l-2.24,0.78L110.49,23.7z M105.8,32.67c9.43,0,17.08,7.65,17.08,17.08c0,9.43-7.65,17.08-17.08,17.08c-8.18,0-15.02-5.76-16.69-13.44 l-6.08,0.56c0.77-4.4,2.23-8.49,4.22-12.33l3.06,0.92C93.03,36.71,98.94,32.67,105.8,32.67z"/>
+                    </svg>
+                </span>
+                Motorcycle
                 <span class="vehicle-indicator"></span>
             </button>
         </div>
@@ -766,7 +800,7 @@
         <div id="drivePanel">
             <div class="card accent-border" id="idlePanel">
                 <div class="card-header">
-                    <span class="card-title">🟢 Ready to Drive</span>
+                    <span class="card-title">Ready to Drive</span>
                 </div>
                 <div class="mileage-row" style="margin-bottom:12px;">
                     <div class="mileage-input-group">
@@ -779,7 +813,7 @@
                     </div>
                 </div>
                 <button class="btn btn-primary btn-block" id="startDriveBtn">
-                    ▶️ Start Drive — <span id="startDriveLabel">Car</span>
+                    Start Drive — <span id="startDriveLabel">Car</span>
                 </button>
                 <div style="font-size:0.7rem;color:var(--text3);margin-top:8px;text-align:center;">
                     GPS will track distance automatically • Odometer start required
@@ -819,7 +853,7 @@
 
             <div class="card accent-border" id="summaryPanel" style="display:none;">
                 <div class="card-header">
-                    <span class="card-title">📋 Drive Summary</span>
+                    <span class="card-title">Drive Summary</span>
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.85rem; margin-bottom:12px;">
                     <div><span style="color:var(--text3);">GPS Distance:</span><br><strong id="summaryGpsDist">0.00 km</strong></div>
@@ -849,15 +883,15 @@
         <!-- ── History Section ── -->
         <div class="card" id="historyCard">
             <div class="history-header">
-                <span class="card-title">📚 Drive History</span>
+                <span class="card-title">Drive History</span>
                 <span class="history-count" id="historyCount">0 drives</span>
             </div>
-            <div class="summary-bar" id="summaryBar" style="margin-bottom:12px; display:none;">
+            <div class="summary-bar" id="summaryBar" style="display:none;">
                 <div class="summary-chip">Total: <strong id="sumTotalDist">0 km</strong></div>
                 <div class="summary-chip">Cost: <strong id="sumTotalCost">0.00 €</strong></div>
                 <div class="summary-chip">Drives: <strong id="sumTotalDrives">0</strong></div>
             </div>
-            <div id="drivesList" style="display:flex;flex-direction:column;gap:10px;">
+            <div id="drivesList" style="display:flex;flex-direction:column;gap:10px; margin-top:6px;">
                 <div style="text-align:center;color:var(--text3);padding:20px;font-size:0.9rem;">
                     No drives logged yet.<br>Start your first drive above!
                 </div>
@@ -876,10 +910,14 @@
 
     <script>
         (function() {
+            // ── SVG icon definitions (for reuse) ──
+            const carIconSVG = `<svg viewBox="0 0 122.88 35.03" fill="currentColor"><path d="M99.42,13.57c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73 C88.69,18.37,93.49,13.57,99.42,13.57z M79.05,5c-0.59,1.27-1.06,2.69-1.42,4.23c-0.82,2.57,0.39,3.11,3.19,2.06 c2.06-1.23,4.12-2.47,6.18-3.7c1.05-0.74,1.55-1.47,1.38-2.19c-0.34-1.42-3.08-2.16-5.33-2.6C80.19,2.23,80.39,2.11,79.05,5z M23.86,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99c-2.75,0-4.99-2.23-4.99-4.99 C18.87,21.54,21.1,19.31,23.86,19.31z M99.42,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99 c-2.75,0-4.99-2.23-4.99-4.99C94.43,21.54,96.66,19.31,99.42,19.31z M46.14,12.5c2.77-2.97,5.97-4.9,9.67-6.76 c8.1-4.08,13.06-3.58,21.66-3.58l-2.89,7.5c-1.21,1.6-2.58,2.73-4.66,2.84H46.14z M23.86,13.57 c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73C13.13,18.37,17.93,13.57,23.86,13.57z M40.82,10.3c3.52-2.19,7.35-4.15,11.59-5.82c12.91-5.09,22.78-6,36.32-1.9c4.08,1.55,8.16,3.1,12.24,4.06 c4.03,0.96,21.48,1.88,21.91,4.81l-4.31,5.15c1.57,1.36,2.85,3.03,3.32,5.64c-0.13,1.61-0.57,2.96-1.33,4.04 c-1.29,1.85-5.07,3.76-7.11,2.67c-0.65-0.35-1.02-1.05-1.01-2.24c0.06-23.9-28.79-21.18-26.62,2.82H35.48 C44.8,5.49,5.04,5.4,12.1,28.7C9.62,31.38,3.77,27.34,0,18.75c1.03-1.02,2.16-1.99,3.42-2.89c-0.06-0.05,0.06,0.19-0.15-0.17 c-0.21-0.36,0.51-1.87,1.99-2.74C13.02,8.4,31.73,8.52,40.82,10.3z"/></svg>`;
+            const motorcycleIconSVG = `<svg viewBox="0 0 122.88 66.83" fill="currentColor"><path d="M61.7,17.72c9.72-2.36,21.24-2.33,30.28-1.54C84.25,29.95,67.62,28.03,61.7,17.72z M25.18,57.6 l-4.13-4.13v5.72C22.58,58.99,23.98,58.43,25.18,57.6z M18.3,59.16v-5.68l-4.03,4.03 C15.44,58.35,16.81,58.92,18.3,59.16z M12.28,55.6l4.07-4.07h-5.91C10.72,53.04,11.36,54.43,12.28,55.6z M10.32,48.77h6.03l-4.41-4.41C11.06,45.64,10.49,47.14,10.32,48.77z M13.82,42.34l4.48,4.48v-6.47 C16.62,40.61,15.09,41.31,13.82,42.34z M21.06,40.31v6.5l4.58-4.58C24.34,41.22,22.77,40.54,21.06,40.31z M27.55,44.23l-4.54,4.54h6.26C29.09,47.08,28.48,45.53,27.55,44.23z M29.15,51.52h-6.14l4.2,4.2 C28.17,54.53,28.85,53.09,29.15,51.52z M110.91,57.79l-4.31-4.31v5.77C108.18,59.11,109.65,58.59,110.91,57.79z M103.84,59.07 v-5.6l-3.84,3.84C101.12,58.16,102.42,58.78,103.84,59.07z M98.08,55.33l3.04-3.04l-4.38,0.4C97.05,53.65,97.51,54.54,98.08,55.33z M97.99,44.86l-0.22-0.22l-0.08,0.13L97.99,44.86z M99.57,42.55l3.91,3.91c0.11-0.09,0.23-0.18,0.36-0.26v-5.76 C102.23,40.77,100.77,41.51,99.57,42.55z M106.6,40.26v5.33c0.33,0.05,0.65,0.14,0.96,0.27l3.82-3.82 C110.02,41.05,108.38,40.41,106.6,40.26z M113.36,43.96l-3.79,3.79c0.16,0.32,0.28,0.66,0.34,1.02h5.36 C115.09,46.97,114.4,45.32,113.36,43.96z M115.16,51.52h-5.71c-0.11,0.19-0.23,0.36-0.37,0.52l3.93,3.93 C114.08,54.73,114.84,53.21,115.16,51.52z M41.6,9.27c1.16,0.42,1.71,1.57,1.05,2.98c-0.89,1.89-1.88,1.83-3.69,2.29 l-1.15,0.29c-1.47,0.4-2.66,0.39-3.49,0.11l-1.04,0.22l-1,2.16c4.1,1,7.87-0.59,11.39-4.15c5.05-0.79,9.93-0.31,14.59,1.87 c0.42,4.29,1.72,7.56,3.73,10c6.25,7.56,17.94,6.94,25.7,2.07c3.65-2.29,6.66-5.57,9.07-9.76c5.34-0.02,10.62,0.28,15.8,1.1 l1.54,3.51C94.89,22.22,83.5,35.66,78.98,56.6H45.08c-2.27-13.18-8.66-21.8-17.72-27.47l2.47,1.8l-1.69,3.92 c5.21,2.93,8.73,8.5,8.73,14.9c0,9.43-7.65,17.08-17.08,17.08S2.71,59.19,2.71,49.75c0-8.35,6-15.31,13.92-16.79 c-4.53,0.49-9.71,2.11-15.43,4.66L0,35.32c5.1-4.62,12.93-7.45,24.42-7.88c-3.85-2.03-8.11-3.61-12.68-4.85 C17.25,11.86,24.28,4.01,33.35,0l1.32,2.19c-3.04,3.46-5.5,7.68-7.35,12.72c0.8,0.57,1.59,1.05,2.36,1.43l1.39-2.98 c0.21-0.44,0.62-0.73,1.07-0.79l0.96-0.2c0.04-0.1,0.1-0.21,0.16-0.32c0.95-1.68,2.9-2.1,4.77-2.49C39.18,9.35,40.47,8.86,41.6,9.27z M110.49,23.7l3.55-0.49l8.46,8.9l-2.24,0.78L110.49,23.7z M105.8,32.67c9.43,0,17.08,7.65,17.08,17.08c0,9.43-7.65,17.08-17.08,17.08c-8.18,0-15.02-5.76-16.69-13.44 l-6.08,0.56c0.77-4.4,2.23-8.49,4.22-12.33l3.06,0.92C93.03,36.71,98.94,32.67,105.8,32.67z"/></svg>`;
+
             // ── DOM refs ──
             const body = document.body;
             const btnCar = document.getElementById('btnCar');
-            const btnVespa = document.getElementById('btnVespa');
+            const btnMotorcycle = document.getElementById('btnMotorcycle');
             const activeVehicleLabel = document.getElementById('activeVehicleLabel');
             const plateInput = document.getElementById('plateInput');
             const platePreview = document.getElementById('platePreview');
@@ -924,14 +962,13 @@
             const toast = document.getElementById('toast');
             const gpsBanner = document.getElementById('gpsBanner');
             const settingsCard = document.getElementById('settingsCard');
-            const logoWrap = document.getElementById('logoWrap');
 
             // ── State ──
             const STORAGE_KEY = 'drivelogger_data';
             const ACTIVE_DRIVE_KEY = 'drivelogger_active_drive';
 
             let currentVehicle = 'car';
-            let settings = { carRate: 0.5, vespaRate: 0.25, carPlate: '', vespaPlate: '' };
+            let settings = { carRate: 0.5, motorcycleRate: 0.25, carPlate: '', motorcyclePlate: '' };
             let drives = [];
             let activeDrive = null;
             let gpsWatchId = null;
@@ -987,13 +1024,13 @@
             }
 
             // ── Helpers ──
-            function getCurrentRate() { return currentVehicle === 'car' ? settings.carRate : settings.vespaRate; }
+            function getCurrentRate() { return currentVehicle === 'car' ? settings.carRate : settings.motorcycleRate; }
 
-            function getCurrentPlate() { return currentVehicle === 'car' ? settings.carPlate : settings.vespaPlate; }
+            function getCurrentPlate() { return currentVehicle === 'car' ? settings.carPlate : settings.motorcyclePlate; }
 
             function setCurrentPlate(val) {
                 if (currentVehicle === 'car') settings.carPlate = val;
-                else settings.vespaPlate = val;
+                else settings.motorcyclePlate = val;
             }
 
             function formatCurrency(amount) { return amount.toFixed(2) + ' €'; }
@@ -1094,7 +1131,7 @@
                     };
                     rows.push([
                         index++,
-                        esc(d.vehicle === 'car' ? 'Car' : 'Vespa'),
+                        esc(d.vehicle === 'car' ? 'Car' : 'Motorcycle'),
                         esc(d.plate || ''),
                         esc(formatDateForCSV(d.startDateTime)),
                         esc(formatTimeForCSV(d.startDateTime)),
@@ -1146,24 +1183,34 @@
 
             // ── UI updates ──
             function updateVehicleUI() {
-                body.className = currentVehicle === 'car' ? 'vehicle-car' : 'vehicle-vespa';
+                body.className = currentVehicle === 'car' ? 'vehicle-car' : 'vehicle-motorcycle';
                 btnCar.classList.toggle('active', currentVehicle === 'car');
-                btnVespa.classList.toggle('active', currentVehicle === 'vespa');
-                activeVehicleLabel.textContent = currentVehicle === 'car' ? 'Car' : 'Vespa';
-                startDriveLabel.textContent = currentVehicle === 'car' ? 'Car' : 'Vespa';
-                trackingVehicleLabel.textContent = currentVehicle === 'car' ? '🚗 Car' : '🛵 Vespa';
+                btnMotorcycle.classList.toggle('active', currentVehicle === 'motorcycle');
+                activeVehicleLabel.textContent = currentVehicle === 'car' ? 'Car' : 'Motorcycle';
+                startDriveLabel.textContent = currentVehicle === 'car' ? 'Car' : 'Motorcycle';
+                trackingVehicleLabel.textContent = currentVehicle === 'car' ? '🚗 Car' : '🏍️ Motorcycle';
                 rateDisplay.textContent = formatCurrency(getCurrentRate()) + ' /km';
                 rateInput.value = getCurrentRate().toFixed(2);
                 plateInput.value = getCurrentPlate();
                 platePreview.textContent = getCurrentPlate() ? 'Plate: ' + getCurrentPlate() : '';
-                settingsCard.style.borderLeftColor = currentVehicle === 'car' ? '#f59e0b' : '#06d6a0';
-                document.documentElement.style.setProperty('--accent-glow',
-                    currentVehicle === 'car' ? 'rgba(245,158,11,0.25)' : 'rgba(6,214,160,0.25)');
-                // Update logo wrapper background gradient to match accent
-                const wrap = document.querySelector('.app-logo-wrap');
-                wrap.style.background = currentVehicle === 'car' ?
-                    'linear-gradient(135deg, #f59e0b, #d97706)' :
-                    'linear-gradient(135deg, #06d6a0, #05b88a)';
+
+                const carColor = '#99bef5';
+                const motorcycleColor = '#e3890b';
+                const accent = currentVehicle === 'car' ? carColor : motorcycleColor;
+                const accent2 = currentVehicle === 'car' ? '#7aa3d9' : '#b87109';
+                const glow = currentVehicle === 'car' ? 'rgba(153,190,245,0.25)' : 'rgba(227,137,11,0.25)';
+
+                settingsCard.style.borderLeftColor = accent;
+                document.documentElement.style.setProperty('--accent-glow', glow);
+                // Update CSS vars for accent and accent2
+                document.documentElement.style.setProperty('--accent', accent);
+                document.documentElement.style.setProperty('--accent2', accent2);
+                // Also update the rate badge and other elements that use var(--accent)
+                // They will update automatically via CSS.
+            }
+
+            function getVehicleIconSVG(vehicle) {
+                return vehicle === 'car' ? carIconSVG : motorcycleIconSVG;
             }
 
             function updateHistoryUI() {
@@ -1188,11 +1235,13 @@
                         totalCost += cost;
                         const card = document.createElement('div');
                         card.className = 'drive-card';
-                        const vehEmoji = d.vehicle === 'car' ? '🚗' : '🛵';
-                        const vehLabel = d.vehicle === 'car' ? 'Car' : 'Vespa';
+                        const vehLabel = d.vehicle === 'car' ? 'Car' : 'Motorcycle';
+                        const iconSVG = getVehicleIconSVG(d.vehicle);
+                        // wrap the SVG in a span with class veh-icon-sm
+                        const iconHtml = `<span class="veh-icon-sm">${iconSVG}</span>`;
                         card.innerHTML = `
                             <div class="drive-top">
-                                <span class="drive-vehicle">${vehEmoji} ${vehLabel}${d.plate ? ' <span style="font-size:0.7rem;color:var(--text3);">(' + d.plate + ')</span>' : ''}</span>
+                                <span class="drive-vehicle">${iconHtml} ${vehLabel}${d.plate ? ' <span style="font-size:0.7rem;color:var(--text3);">(' + d.plate + ')</span>' : ''}</span>
                                 <span class="drive-cost">${formatCurrency(cost)}</span>
                             </div>
                             <div class="drive-details">
@@ -1460,9 +1509,9 @@
                 updateVehicleUI();
                 saveToStorage();
             });
-            btnVespa.addEventListener('click', () => {
+            btnMotorcycle.addEventListener('click', () => {
                 if (activeDrive) { showToast('Cannot switch vehicle during an active drive.', 'error'); return; }
-                currentVehicle = 'vespa';
+                currentVehicle = 'motorcycle';
                 updateVehicleUI();
                 saveToStorage();
             });
@@ -1482,7 +1531,7 @@
                 const val = parseFloat(rateInput.value);
                 if (isNaN(val) || val <= 0) { showToast('Please enter a valid rate > 0', 'error'); return; }
                 if (currentVehicle === 'car') settings.carRate = val;
-                else settings.vespaRate = val;
+                else settings.motorcycleRate = val;
                 rateDisplay.textContent = formatCurrency(val) + ' /km';
                 rateEditor.style.display = 'none';
                 saveToStorage();
