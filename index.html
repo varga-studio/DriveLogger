@@ -8,11 +8,16 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
 
-    <!-- Favicon / App Icon – use your own app-logo.png -->
-    <link rel="icon" href="app-logo.png" type="image/png">
+    <!-- iOS specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="app-logo.png">
+    <link rel="apple-touch-startup-image" href="app-logo.png">
 
-    <!-- Theme color for mobile browser -->
+    <!-- Favicon / App Icon -->
+    <link rel="icon" href="app-logo.png" type="image/png">
+
+    <!-- Theme color -->
     <meta name="theme-color" content="#0d1117">
 
     <style>
@@ -695,6 +700,15 @@
             font-weight: 500;
         }
 
+        .import-export-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .import-export-buttons .btn {
+            flex: 1;
+        }
+
         ::-webkit-scrollbar {
             width: 4px;
         }
@@ -909,9 +923,11 @@
                     No drives logged yet.<br>Start your first drive above!
                 </div>
             </div>
-            <button class="btn btn-outline btn-block" id="exportBtn" style="margin-top:14px;">
-                Export All Data (CSV)
-            </button>
+            <div class="import-export-buttons">
+                <button class="btn btn-outline" id="exportBtn">📥 Export CSV</button>
+                <button class="btn btn-outline" id="importBtn">📂 Import</button>
+            </div>
+            <input type="file" id="fileInput" accept=".csv,.json" style="display:none;">
         </div>
     </div>
 
@@ -980,6 +996,8 @@
             const sumTotalCost = document.getElementById('sumTotalCost');
             const sumTotalDrives = document.getElementById('sumTotalDrives');
             const exportBtn = document.getElementById('exportBtn');
+            const importBtn = document.getElementById('importBtn');
+            const fileInput = document.getElementById('fileInput');
             const downloadLink = document.getElementById('downloadLink');
             const toast = document.getElementById('toast');
             const gpsBanner = document.getElementById('gpsBanner');
@@ -990,7 +1008,14 @@
             const ACTIVE_DRIVE_KEY = 'drivelogger_active_drive';
 
             let currentVehicle = 'car';
-            let settings = { carRate: 0.5, motorcycleRate: 0.25, carPlate: '', motorcyclePlate: '' };
+            let settings = {
+                carRate: 0.5,
+                motorcycleRate: 0.25,
+                carPlate: '',
+                motorcyclePlate: '',
+                lastCarOdometer: '',
+                lastMotorcycleOdometer: ''
+            };
             let drives = [];
             let activeDrive = null;
             let gpsWatchId = null;
@@ -1053,6 +1078,15 @@
             function setCurrentPlate(val) {
                 if (currentVehicle === 'car') settings.carPlate = val;
                 else settings.motorcyclePlate = val;
+            }
+
+            function getLastOdometer() {
+                return currentVehicle === 'car' ? settings.lastCarOdometer : settings.lastMotorcycleOdometer;
+            }
+
+            function setLastOdometer(val) {
+                if (currentVehicle === 'car') settings.lastCarOdometer = val;
+                else settings.lastMotorcycleOdometer = val;
             }
 
             function formatCurrency(amount) { return amount.toFixed(2) + ' €'; }
@@ -1133,6 +1167,16 @@
 
                 const sorted = [...drives].sort((a, b) => new Date(b.startDateTime) - new Date(a.startDateTime));
                 let index = 1;
+                let totalDistAll = 0,
+                    totalCostAll = 0;
+                let totalDistCar = 0,
+                    totalCostCar = 0;
+                let totalDistMoto = 0,
+                    totalCostMoto = 0;
+                let countAll = 0,
+                    countCar = 0,
+                    countMoto = 0;
+
                 sorted.forEach(d => {
                     const sm = (d.startMileage !== null && d.startMileage !== undefined) ? d.startMileage : '';
                     const em = (d.endMileage !== null && d.endMileage !== undefined) ? d.endMileage : '';
@@ -1151,6 +1195,21 @@
                         }
                         return str;
                     };
+
+                    // Accumulate totals
+                    totalDistAll += dist;
+                    totalCostAll += cost;
+                    countAll++;
+                    if (d.vehicle === 'car') {
+                        totalDistCar += dist;
+                        totalCostCar += cost;
+                        countCar++;
+                    } else {
+                        totalDistMoto += dist;
+                        totalCostMoto += cost;
+                        countMoto++;
+                    }
+
                     rows.push([
                         index++,
                         esc(d.vehicle === 'car' ? 'Car' : 'Motorcycle'),
@@ -1171,27 +1230,24 @@
                     ].join(';'));
                 });
 
-                const totalDist = sorted.reduce((sum, d) => {
-                    const sm = (d.startMileage !== null && d.startMileage !== undefined) ? d.startMileage : 0;
-                    const em = (d.endMileage !== null && d.endMileage !== undefined) ? d.endMileage : 0;
-                    const odo = (sm && em) ? Math.abs(em - sm) : 0;
-                    const gps = d.gpsDistance || 0;
-                    return sum + (gps > 0 ? gps : odo);
-                }, 0);
-                const totalCost = sorted.reduce((sum, d) => {
-                    const sm = (d.startMileage !== null && d.startMileage !== undefined) ? d.startMileage : 0;
-                    const em = (d.endMileage !== null && d.endMileage !== undefined) ? d.endMileage : 0;
-                    const odo = (sm && em) ? Math.abs(em - sm) : 0;
-                    const gps = d.gpsDistance || 0;
-                    const dist = gps > 0 ? gps : odo;
-                    return sum + dist * (d.rate || getCurrentRate());
-                }, 0);
+                // ── Totals Sections ──
+                rows.push('');
+                rows.push('# Totals – All');
+                rows.push('Total Distance (km);' + totalDistAll.toFixed(3));
+                rows.push('Total Cost (€);' + totalCostAll.toFixed(2));
+                rows.push('Total Drives;' + countAll);
 
                 rows.push('');
-                rows.push('# Totals');
-                rows.push('Total Distance (km);' + totalDist.toFixed(3));
-                rows.push('Total Cost (€);' + totalCost.toFixed(2));
-                rows.push('Total Drives;' + drives.length);
+                rows.push('# Totals – Car');
+                rows.push('Total Distance (km);' + totalDistCar.toFixed(3));
+                rows.push('Total Cost (€);' + totalCostCar.toFixed(2));
+                rows.push('Total Drives;' + countCar);
+
+                rows.push('');
+                rows.push('# Totals – Motorcycle');
+                rows.push('Total Distance (km);' + totalDistMoto.toFixed(3));
+                rows.push('Total Cost (€);' + totalCostMoto.toFixed(2));
+                rows.push('Total Drives;' + countMoto);
 
                 const csvStr = rows.join('\n');
                 const blob = new Blob(['\uFEFF' + csvStr], { type: 'text/csv;charset=utf-8;' });
@@ -1201,6 +1257,165 @@
                 downloadLink.click();
                 URL.revokeObjectURL(url);
                 showToast('CSV exported! ' + drives.length + ' drives', 'success');
+            }
+
+            // ── Import Logic ──
+            function importData(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const content = e.target.result;
+                        let importedDrives = [];
+
+                        // Try parsing as JSON first
+                        if (file.name.endsWith('.json')) {
+                            const jsonData = JSON.parse(content);
+                            if (jsonData.drives && Array.isArray(jsonData.drives)) {
+                                importedDrives = jsonData.drives;
+                            } else {
+                                showToast('Invalid JSON format – missing "drives" array.', 'error');
+                                return;
+                            }
+                        } else {
+                            // Parse CSV
+                            const lines = content.split('\n').filter(line => line.trim() !== '');
+                            let headerFound = false;
+                            let header = [];
+                            let dataRows = [];
+
+                            for (let line of lines) {
+                                if (line.startsWith('#')) continue; // skip comments
+                                if (!headerFound) {
+                                    // Try to find the header line
+                                    if (line.includes('Vehicle') && line.includes('Plate') && line.includes(
+                                            'Start Date')) {
+                                        header = line.split(';');
+                                        headerFound = true;
+                                    }
+                                    continue;
+                                }
+                                dataRows.push(line);
+                            }
+
+                            if (!headerFound) {
+                                showToast('Invalid CSV – header not found.', 'error');
+                                return;
+                            }
+
+                            // Map header indices
+                            const idxVehicle = header.indexOf('Vehicle');
+                            const idxPlate = header.indexOf('Plate');
+                            const idxStartDate = header.indexOf('Start Date');
+                            const idxStartTime = header.indexOf('Start Time');
+                            const idxEndDate = header.indexOf('End Date');
+                            const idxEndTime = header.indexOf('End Time');
+                            const idxStartMileage = header.indexOf('Start Mileage (km)');
+                            const idxEndMileage = header.indexOf('End Mileage (km)');
+                            const idxGpsDist = header.indexOf('GPS Dist (km)');
+                            const idxDuration = header.indexOf('Duration (sec)');
+                            const idxRate = header.indexOf('Rate (€/km)');
+                            const idxDescription = header.indexOf('Description');
+
+                            if (idxVehicle === -1 || idxStartDate === -1 || idxStartTime === -1) {
+                                showToast('Invalid CSV – required columns missing.', 'error');
+                                return;
+                            }
+
+                            for (let row of dataRows) {
+                                // Handle quoted values (simple case)
+                                let values = [];
+                                let current = '';
+                                let insideQuotes = false;
+                                for (let ch of row) {
+                                    if (ch === '"') {
+                                        insideQuotes = !insideQuotes;
+                                        continue;
+                                    }
+                                    if (ch === ';' && !insideQuotes) {
+                                        values.push(current);
+                                        current = '';
+                                    } else {
+                                        current += ch;
+                                    }
+                                }
+                                values.push(current);
+
+                                const vehicle = values[idxVehicle]?.trim().toLowerCase() === 'car' ? 'car' : 'motorcycle';
+                                const plate = values[idxPlate]?.trim() || '';
+                                const startDate = values[idxStartDate]?.trim() || '';
+                                const startTime = values[idxStartTime]?.trim() || '00:00';
+                                const endDate = values[idxEndDate]?.trim() || '';
+                                const endTime = values[idxEndTime]?.trim() || '00:00';
+                                const startMileage = parseFloat(values[idxStartMileage]) || 0;
+                                const endMileage = parseFloat(values[idxEndMileage]) || 0;
+                                const gpsDist = parseFloat(values[idxGpsDist]) || 0;
+                                const duration = parseFloat(values[idxDuration]) || 0;
+                                const rate = parseFloat(values[idxRate]) || getCurrentRate();
+                                const description = values[idxDescription]?.trim() || 'Imported';
+
+                                if (startDate && endDate) {
+                                    const startDateTime = new Date(startDate + 'T' + startTime + ':00').toISOString();
+                                    const endDateTime = new Date(endDate + 'T' + endTime + ':00').toISOString();
+
+                                    importedDrives.push({
+                                        id: 'imp_' + Date.now() + '_' + Math.random().toString(36).substr(2,
+                                        6),
+                                        vehicle: vehicle,
+                                        plate: plate,
+                                        startMileage: startMileage,
+                                        endMileage: endMileage,
+                                        gpsDistance: gpsDist,
+                                        duration: duration,
+                                        rate: rate,
+                                        description: description,
+                                        startDateTime: startDateTime,
+                                        endDateTime: endDateTime
+                                    });
+                                }
+                            }
+                        }
+
+                        if (importedDrives.length === 0) {
+                            showToast('No valid drives found in the file.', 'error');
+                            return;
+                        }
+
+                        // Merge with existing drives
+                        const existingIds = new Set(drives.map(d => d.id));
+                        let newCount = 0;
+                        for (let d of importedDrives) {
+                            // Ensure required fields
+                            if (!d.id) d.id = 'imp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                            if (!d.vehicle) d.vehicle = 'car';
+                            if (!d.description) d.description = 'Imported';
+                            if (!d.rate) d.rate = (d.vehicle === 'car' ? settings.carRate : settings.motorcycleRate);
+                            if (!d.startDateTime || !d.endDateTime) continue; // skip invalid entries
+
+                            if (!existingIds.has(d.id)) {
+                                drives.push(d);
+                                existingIds.add(d.id);
+                                newCount++;
+                            }
+                        }
+
+                        if (newCount === 0) {
+                            showToast('All drives already exist (no new drives added).', '');
+                            return;
+                        }
+
+                        // Sort drives by startDateTime (oldest first for storage, but display sorts newest first)
+                        drives.sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+
+                        saveToStorage();
+                        updateHistoryUI();
+                        showToast('Imported ' + newCount + ' drives successfully!', 'success');
+
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Error importing file: ' + err.message, 'error');
+                    }
+                };
+                reader.readAsText(file);
             }
 
             // ── UI updates ──
@@ -1215,7 +1430,6 @@
                 activeVehicleLabel.textContent = currentVehicle === 'car' ? 'Car' : 'Motorcycle';
                 startDriveLabel.textContent = currentVehicle === 'car' ? 'Car' : 'Motorcycle';
 
-                // Update tracking panel label with SVG icon
                 const iconSVG = getVehicleIconSVG(currentVehicle);
                 const vehicleName = currentVehicle === 'car' ? 'Car' : 'Motorcycle';
                 trackingVehicleLabel.innerHTML = `<span class="veh-icon-sm">${iconSVG}</span> ${vehicleName}`;
@@ -1224,6 +1438,13 @@
                 rateInput.value = getCurrentRate().toFixed(2);
                 plateInput.value = getCurrentPlate();
                 platePreview.textContent = getCurrentPlate() ? 'Plate: ' + getCurrentPlate() : '';
+
+                const lastOdo = getLastOdometer();
+                if (lastOdo !== '' && !isNaN(parseFloat(lastOdo))) {
+                    startMileageInput.value = lastOdo;
+                } else {
+                    startMileageInput.value = '';
+                }
 
                 const carColor = '#99bef5';
                 const motorcycleColor = '#e3890b';
@@ -1471,14 +1692,29 @@
 
             function saveDrive() {
                 if (!activeDrive) return;
+
+                // ── Mandatory End Odometer ──
                 const endMileage = parseFloat(summaryEndMileage.value);
-                const desc = summaryDesc.value.trim();
-                activeDrive.endMileage = isNaN(endMileage) ? null : endMileage;
+                if (isNaN(endMileage) || endMileage < 0) {
+                    showToast('Please enter a valid end odometer reading.', 'error');
+                    summaryEndMileage.classList.add('input-error');
+                    setTimeout(() => summaryEndMileage.classList.remove('input-error'), 2500);
+                    return;
+                }
+
+                // ── Auto‑fill description ──
+                const desc = summaryDesc.value.trim() || 'Private';
+
+                activeDrive.endMileage = endMileage;
                 activeDrive.description = desc;
                 activeDrive.endDateTime = activeDrive.endDateTime || new Date().toISOString();
                 activeDrive.duration = activeDrive.duration || Math.floor((Date.now() - driveStartTimestamp) / 1000);
                 activeDrive.gpsDistance = accumulatedGpsDistance;
                 drives.push({ ...activeDrive });
+
+                // ── Update last odometer for this vehicle ──
+                setLastOdometer(endMileage);
+
                 activeDrive = null;
                 accumulatedGpsDistance = 0;
                 previousPosition = null;
@@ -1499,6 +1735,7 @@
                 liveCost.textContent = '0.00 €';
                 gpsStatus.textContent = '● Ready';
                 gpsStatus.className = 'gps-status';
+                updateVehicleUI(); // refresh last odometer
                 showToast('Drive saved!', 'success');
             }
 
@@ -1522,6 +1759,7 @@
                 liveCost.textContent = '0.00 €';
                 gpsStatus.textContent = '● Ready';
                 gpsStatus.className = 'gps-status';
+                updateVehicleUI();
                 showToast('Drive discarded', '');
             }
 
@@ -1570,6 +1808,13 @@
             discardDriveBtn.addEventListener('click', discardDrive);
             summaryEndMileage.addEventListener('input', updateOdometerDiff);
             exportBtn.addEventListener('click', exportData);
+            importBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    importData(e.target.files[0]);
+                }
+                fileInput.value = ''; // reset
+            });
             rateInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') saveRateBtn.click();
                 if (e.key === 'Escape') cancelRateBtn.click();
