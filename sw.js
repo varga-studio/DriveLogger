@@ -1,4 +1,4 @@
-const CACHE_NAME = 'drivelogger-v4';
+const CACHE_NAME = 'drivelogger-v5';
 const ASSETS = [
     'index.html',
     'app-logo.png',
