@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DriveLogger</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- iOS specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="app-logo.png">
+    <link rel="apple-touch-startup-image" href="app-logo.png">
+
+    <!-- Favicon / App Icon -->
+    <link rel="icon" href="app-logo.png" type="image/png">
+
+    <!-- Theme color -->
+    <meta name="theme-color" content="#0d1117">
+
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface2: #1c2333;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text2: #b0b8c4;
+            --text3: #8b949e;
+            --accent: #99bef5;
+            --accent2: #7aa3d9;
+            --accent-glow: rgba(153, 190, 245, 0.25);
+            --success: #3fb950;
+            --danger: #f85149;
+            --info: #58a6ff;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --radius-xs: 6px;
+            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', system-ui, sans-serif;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
+            --card-shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        body.vehicle-motorcycle {
+            --accent: #e3890b;
+            --accent2: #b87109;
+            --accent-glow: rgba(227, 137, 11, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            padding: env(safe-area-inset-top, 16px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 24px) env(safe-area-inset-left, 16px);
+            display: flex;
+            justify-content: center;
+            transition: background var(--transition);
+            background-image: radial-gradient(ellipse at 50% 0%, var(--accent-glow) 0%, transparent 60%);
+            background-attachment: fixed;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 8px 4px 40px;
+        }
+
+        /* ── Header with logo ── */
+        .app-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 6px 8px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 4px;
+        }
+
+        .app-logo-wrap {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: transparent;
+        }
+        .app-logo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+        .app-logo-wrap:hover img {
+            transform: scale(1.05);
+        }
+
+        .app-title-group {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+        .app-title-group .logo-text {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            background: linear-gradient(135deg, var(--text), var(--text2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 40px var(--accent-glow);
+            transition: background var(--transition);
+        }
+        .app-title-group .logo-sub {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text3);
+            font-weight: 500;
+            margin-top: -2px;
+        }
+
+        /* ── Vehicle Toggle ── */
+        .vehicle-toggle-wrap {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 4px;
+            display: flex;
+            gap: 4px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        .vehicle-toggle-wrap::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border-radius: calc(var(--radius) - 4px);
+            background: var(--surface2);
+            transition: transform var(--transition);
+            z-index: 0;
+            width: calc(50% - 4px);
+        }
+        body.vehicle-motorcycle .vehicle-toggle-wrap::before {
+            transform: translateX(100%);
+        }
+        .vehicle-btn {
+            flex: 1;
+            padding: 14px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text2);
+            border-radius: calc(var(--radius) - 4px);
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: var(--font);
+            z-index: 1;
+            transition: color var(--transition), transform 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            white-space: nowrap;
+        }
+        .vehicle-btn:active {
+            transform: scale(0.96);
+        }
+        .vehicle-btn.active {
+            color: #fff;
+        }
+        .vehicle-btn .veh-icon {
+            width: 26px;
+            height: 26px;
+            flex-shrink: 0;
+            transition: transform var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .vehicle-btn .veh-icon svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
+        }
+        .vehicle-btn.active .veh-icon {
+            transform: scale(1.15);
+        }
+        .vehicle-indicator {
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 20px;
+            height: 3px;
+            border-radius: 3px;
+            background: var(--accent);
+            transition: transform var(--transition);
+        }
+        .vehicle-btn.active .vehicle-indicator {
+            transform: translateX(-50%) scaleX(1);
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 18px 16px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border);
+            transition: border-color var(--transition), box-shadow var(--transition);
+        }
+        .card.accent-border {
+            border-left: 3px solid var(--accent);
+            box-shadow: var(--card-shadow-lg);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .card-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            font-weight: 600;
+            color: var(--text3);
+        }
+        .card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        .card-value.accent {
+            color: var(--accent);
+            transition: color var(--transition);
+        }
+
+        .rate-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .rate-badge {
+            background: var(--surface2);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border);
+            transition: all var(--transition);
+        }
+        .rate-badge .rate-value {
+            color: var(--accent);
+            font-size: 1.1rem;
+            transition: color var(--transition);
+        }
+        .rate-edit-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text2);
+            padding: 7px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: var(--font);
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .rate-edit-btn:hover,
+        .rate-edit-btn:active {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .plate-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .plate-input {
+            flex: 1;
+            min-width: 120px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: var(--radius-xs);
+            font-size: 0.9rem;
+            font-family: var(--font);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: border-color var(--transition);
+            outline: none;
+        }
+        .plate-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .plate-input::placeholder {
+            color: var(--text3);
+            font-weight: 400;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 25px;
+            border: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.2px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            white-space: nowrap;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .btn:active {
+            transform: scale(0.95);
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 16px var(--accent-glow);
+            font-size: 1rem;
+            padding: 14px 28px;
+            transition: all var(--transition);
+        }
+        .btn-primary:hover {
+            box-shadow: 0 6px 24px var(--accent-glow);
+            filter: brightness(1.1);
+        }
+        .btn-danger {
+            background: transparent;
+            border: 2px solid var(--danger);
+            color: var(--danger);
+            font-weight: 600;
+        }
+        .btn-danger:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text);
+        }
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .btn-pause {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 4px 16px var(--accent-glow);
+            font-size: 1rem;
+            padding: 14px 28px;
+            transition: all var(--transition);
+            border: 2px solid var(--accent2);
+        }
+        .btn-pause:hover {
+            box-shadow: 0 6px 24px var(--accent-glow);
+            filter: brightness(1.1);
+        }
+        .btn-pause.paused {
+            background: transparent;
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+        .btn-sm {
+            padding: 7px 14px;
+            font-size: 0.8rem;
+            border-radius: 18px;
+            font-weight: 500;
+        }
+        .btn-block {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .tracking-panel {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 20px 16px;
+            box-shadow: var(--card-shadow-lg);
+            border: 2px solid var(--accent);
+            transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+            animation: pulseBorder 2.5s ease-in-out infinite;
+        }
+        @keyframes pulseBorder {
+            0%,
+            100% {
+                border-color: var(--accent);
+                box-shadow: 0 0 20px var(--accent-glow), var(--card-shadow-lg);
+            }
+            50% {
+                border-color: var(--accent2);
+                box-shadow: 0 0 35px var(--accent-glow), var(--card-shadow-lg);
+            }
+        }
+        .tracking-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+            animation: pulseDot 1.2s ease-in-out infinite;
+            box-shadow: 0 0 10px var(--accent-glow);
+            transition: all var(--transition);
+        }
+        @keyframes pulseDot {
+            0%,
+            100% {
+                box-shadow: 0 0 6px var(--accent-glow);
+            }
+            50% {
+                box-shadow: 0 0 20px var(--accent-glow), 0 0 40px var(--accent-glow);
+            }
+        }
+        .tracking-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .tracking-stat {
+            background: var(--surface2);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .tracking-stat .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text3);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .tracking-stat .stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text);
+        }
+        .tracking-stat .stat-value.highlight {
+            color: var(--accent);
+            transition: color var(--transition);
+        }
+        .gps-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text3);
+            margin-top: 8px;
+        }
+        .gps-status.good {
+            color: var(--success);
+        }
+        .gps-status.poor {
+            color: var(--danger);
+        }
+
+        .tracking-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .tracking-actions .btn {
+            flex: 1;
+        }
+
+        .mileage-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .mileage-input-group label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text3);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .mileage-input-group input {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: var(--radius-xs);
+            font-size: 0.95rem;
+            font-family: var(--font);
+            font-weight: 500;
+            outline: none;
+            transition: border-color var(--transition);
+        }
+        .mileage-input-group input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .mileage-input-group input.input-error {
+            border-color: var(--danger) !important;
+            box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.3) !important;
+        }
+
+        .desc-input {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: var(--radius-xs);
+            font-size: 0.9rem;
+            font-family: var(--font);
+            resize: vertical;
+            min-height: 44px;
+            outline: none;
+            transition: border-color var(--transition);
+        }
+        .desc-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .desc-input::placeholder {
+            color: var(--text3);
+        }
+
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .history-count {
+            font-size: 0.8rem;
+            color: var(--text3);
+            font-weight: 500;
+        }
+        .summary-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            margin-bottom: 12px;
+        }
+        .summary-chip {
+            background: var(--surface2);
+            border-radius: 20px;
+            padding: 8px 14px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text2);
+        }
+        .summary-chip strong {
+            color: var(--accent);
+            transition: color var(--transition);
+        }
+
+        .veh-icon-sm {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+        }
+        .veh-icon-sm svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
+        }
+
+        .drive-card {
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        .drive-card:hover {
+            border-color: var(--accent);
+            box-shadow: var(--card-shadow);
+        }
+        .drive-card .drive-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .drive-card .drive-vehicle {
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .drive-card .drive-date {
+            font-size: 0.75rem;
+            color: var(--text3);
+        }
+        .drive-card .drive-details {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            color: var(--text2);
+        }
+        .drive-card .drive-details span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .drive-card .drive-cost {
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 1rem;
+            transition: color var(--transition);
+        }
+        .drive-card .drive-desc {
+            font-size: 0.8rem;
+            color: var(--text3);
+            font-style: italic;
+        }
+        .drive-card .drive-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--surface2);
+            color: var(--text);
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            box-shadow: var(--card-shadow-lg);
+            border: 1px solid var(--border);
+            z-index: 999;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success {
+            border-color: var(--success);
+            color: var(--success);
+        }
+        .toast.error {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .gps-banner {
+            background: var(--surface2);
+            border: 1px solid #f0883e55;
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            color: #f0883e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .import-export-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .import-export-buttons .btn {
+            flex: 1;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        @media (max-width: 380px) {
+            .tracking-stats {
+                grid-template-columns: 1fr;
+            }
+            .mileage-row {
+                grid-template-columns: 1fr;
+            }
+            .btn {
+                padding: 10px 16px;
+                font-size: 0.85rem;
+            }
+            .btn-primary {
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+            .card-value {
+                font-size: 1.2rem;
+            }
+            .tracking-stat .stat-value {
+                font-size: 1.3rem;
+            }
+            .app-title-group .logo-text {
+                font-size: 1.3rem;
+            }
+            .app-logo-wrap {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+            }
+            .vehicle-btn .veh-icon {
+                width: 22px;
+                height: 22px;
+            }
+            .tracking-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="vehicle-car">
+    <div class="app-container">
+        <!-- ── Header with Logo ── -->
+        <header class="app-header">
+            <div class="app-logo-wrap" id="logoWrap">
+                <img src="app-logo.png" alt="DriveLogger Logo" id="logoImg">
+            </div>
+            <div class="app-title-group">
+                <span class="logo-text">DriveLogger</span>
+                <span class="logo-sub">Track every kilometer</span>
+            </div>
+        </header>
+
+        <!-- ── Vehicle Toggle ── -->
+        <div class="vehicle-toggle-wrap" id="vehicleToggle">
+            <button class="vehicle-btn active" data-vehicle="car" id="btnCar">
+                <span class="veh-icon">
+                    <svg viewBox="0 0 122.88 35.03" fill="currentColor">
+                        <path d="M99.42,13.57c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73 C88.69,18.37,93.49,13.57,99.42,13.57z M79.05,5c-0.59,1.27-1.06,2.69-1.42,4.23c-0.82,2.57,0.39,3.11,3.19,2.06 c2.06-1.23,4.12-2.47,6.18-3.7c1.05-0.74,1.55-1.47,1.38-2.19c-0.34-1.42-3.08-2.16-5.33-2.6C80.19,2.23,80.39,2.11,79.05,5z M23.86,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99c-2.75,0-4.99-2.23-4.99-4.99 C18.87,21.54,21.1,19.31,23.86,19.31z M99.42,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99 c-2.75,0-4.99-2.23-4.99-4.99C94.43,21.54,96.66,19.31,99.42,19.31z M46.14,12.5c2.77-2.97,5.97-4.9,9.67-6.76 c8.1-4.08,13.06-3.58,21.66-3.58l-2.89,7.5c-1.21,1.6-2.58,2.73-4.66,2.84H46.14z M23.86,13.57 c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73C13.13,18.37,17.93,13.57,23.86,13.57z M40.82,10.3c3.52-2.19,7.35-4.15,11.59-5.82c12.91-5.09,22.78-6,36.32-1.9c4.08,1.55,8.16,3.1,12.24,4.06 c4.03,0.96,21.48,1.88,21.91,4.81l-4.31,5.15c1.57,1.36,2.85,3.03,3.32,5.64c-0.13,1.61-0.57,2.96-1.33,4.04 c-1.29,1.85-5.07,3.76-7.11,2.67c-0.65-0.35-1.02-1.05-1.01-2.24c0.06-23.9-28.79-21.18-26.62,2.82H35.48 C44.8,5.49,5.04,5.4,12.1,28.7C9.62,31.38,3.77,27.34,0,18.75c1.03-1.02,2.16-1.99,3.42-2.89c-0.06-0.05,0.06,0.19-0.15-0.17 c-0.21-0.36,0.51-1.87,1.99-2.74C13.02,8.4,31.73,8.52,40.82,10.3z"/>
+                    </svg>
+                </span>
+                Car
+                <span class="vehicle-indicator"></span>
+            </button>
+            <button class="vehicle-btn" data-vehicle="motorcycle" id="btnMotorcycle">
+                <span class="veh-icon">
+                    <svg viewBox="0 0 122.88 66.83" fill="currentColor">
+                        <path d="M61.7,17.72c9.72-2.36,21.24-2.33,30.28-1.54C84.25,29.95,67.62,28.03,61.7,17.72z M25.18,57.6 l-4.13-4.13v5.72C22.58,58.99,23.98,58.43,25.18,57.6z M18.3,59.16v-5.68l-4.03,4.03 C15.44,58.35,16.81,58.92,18.3,59.16z M12.28,55.6l4.07-4.07h-5.91C10.72,53.04,11.36,54.43,12.28,55.6z M10.32,48.77h6.03l-4.41-4.41C11.06,45.64,10.49,47.14,10.32,48.77z M13.82,42.34l4.48,4.48v-6.47 C16.62,40.61,15.09,41.31,13.82,42.34z M21.06,40.31v6.5l4.58-4.58C24.34,41.22,22.77,40.54,21.06,40.31z M27.55,44.23l-4.54,4.54h6.26C29.09,47.08,28.48,45.53,27.55,44.23z M29.15,51.52h-6.14l4.2,4.2 C28.17,54.53,28.85,53.09,29.15,51.52z M110.91,57.79l-4.31-4.31v5.77C108.18,59.11,109.65,58.59,110.91,57.79z M103.84,59.07 v-5.6l-3.84,3.84C101.12,58.16,102.42,58.78,103.84,59.07z M98.08,55.33l3.04-3.04l-4.38,0.4C97.05,53.65,97.51,54.54,98.08,55.33z M97.99,44.86l-0.22-0.22l-0.08,0.13L97.99,44.86z M99.57,42.55l3.91,3.91c0.11-0.09,0.23-0.18,0.36-0.26v-5.76 C102.23,40.77,100.77,41.51,99.57,42.55z M106.6,40.26v5.33c0.33,0.05,0.65,0.14,0.96,0.27l3.82-3.82 C110.02,41.05,108.38,40.41,106.6,40.26z M113.36,43.96l-3.79,3.79c0.16,0.32,0.28,0.66,0.34,1.02h5.36 C115.09,46.97,114.4,45.32,113.36,43.96z M115.16,51.52h-5.71c-0.11,0.19-0.23,0.36-0.37,0.52l3.93,3.93 C114.08,54.73,114.84,53.21,115.16,51.52z M41.6,9.27c1.16,0.42,1.71,1.57,1.05,2.98c-0.89,1.89-1.88,1.83-3.69,2.29 l-1.15,0.29c-1.47,0.4-2.66,0.39-3.49,0.11l-1.04,0.22l-1,2.16c4.1,1,7.87-0.59,11.39-4.15c5.05-0.79,9.93-0.31,14.59,1.87 c0.42,4.29,1.72,7.56,3.73,10c6.25,7.56,17.94,6.94,25.7,2.07c3.65-2.29,6.66-5.57,9.07-9.76c5.34-0.02,10.62,0.28,15.8,1.1 l1.54,3.51C94.89,22.22,83.5,35.66,78.98,56.6H45.08c-2.27-13.18-8.66-21.8-17.72-27.47l2.47,1.8l-1.69,3.92 c5.21,2.93,8.73,8.5,8.73,14.9c0,9.43-7.65,17.08-17.08,17.08S2.71,59.19,2.71,49.75c0-8.35,6-15.31,13.92-16.79 c-4.53,0.49-9.71,2.11-15.43,4.66L0,35.32c5.1-4.62,12.93-7.45,24.42-7.88c-3.85-2.03-8.11-3.61-12.68-4.85 C17.25,11.86,24.28,4.01,33.35,0l1.32,2.19c-3.04,3.46-5.5,7.68-7.35,12.72c0.8,0.57,1.59,1.05,2.36,1.43l1.39-2.98 c0.21-0.44,0.62-0.73,1.07-0.79l0.96-0.2c0.04-0.1,0.1-0.21,0.16-0.32c0.95-1.68,2.9-2.1,4.77-2.49C39.18,9.35,40.47,8.86,41.6,9.27z M110.49,23.7l3.55-0.49l8.46,8.9l-2.24,0.78L110.49,23.7z M105.8,32.67c9.43,0,17.08,7.65,17.08,17.08c0,9.43-7.65,17.08-17.08,17.08c-8.18,0-15.02-5.76-16.69-13.44 l-6.08,0.56c0.77-4.4,2.23-8.49,4.22-12.33l3.06,0.92C93.03,36.71,98.94,32.67,105.8,32.67z"/>
+                    </svg>
+                </span>
+                Motorcycle
+                <span class="vehicle-indicator"></span>
+            </button>
+        </div>
+
+        <!-- ── Settings Card ── -->
+        <div class="card" id="settingsCard">
+            <div class="card-header">
+                <span class="card-title">Settings — <span id="activeVehicleLabel">Car</span></span>
+            </div>
+            <div class="plate-row" style="margin-bottom:10px;">
+                <input type="text" class="plate-input" id="plateInput" placeholder="Plate number (e.g. AB-123-CD)" maxlength="15">
+                <button class="btn btn-sm btn-outline" id="savePlateBtn">Save Plate</button>
+            </div>
+            <div class="rate-display">
+                <div class="rate-badge">
+                    Rate: <span class="rate-value" id="rateDisplay">0.50 €/km</span>
+                </div>
+                <button class="rate-edit-btn" id="editRateBtn">Edit Rate</button>
+                <span style="font-size:0.7rem;color:var(--text3);margin-left:4px;" id="platePreview"></span>
+            </div>
+            <div id="rateEditor" style="display:none; margin-top:10px; gap:8px; align-items:center; flex-wrap:wrap;">
+                <input type="number" id="rateInput" step="0.01" min="0.01" max="10" value="0.50" style="width:90px; background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:8px 10px; border-radius:var(--radius-xs); font-family:var(--font); font-size:0.9rem; outline:none;">
+                <span style="color:var(--text2);">€/km</span>
+                <button class="btn btn-sm btn-primary" id="saveRateBtn">Save</button>
+                <button class="btn btn-sm btn-outline" id="cancelRateBtn">Cancel</button>
+            </div>
+        </div>
+
+        <!-- ── GPS Status Banner ── -->
+        <div class="gps-banner" id="gpsBanner" style="display:none;">
+            GPS is unavailable on this device. You can still log drives manually using odometer readings.
+        </div>
+
+        <!-- ── Active Drive / Idle Panel ── -->
+        <div id="drivePanel">
+            <div class="card accent-border" id="idlePanel">
+                <div class="card-header">
+                    <span class="card-title">Ready to Drive</span>
+                </div>
+                <div class="mileage-row" style="margin-bottom:12px;">
+                    <div class="mileage-input-group">
+                        <label>Start Odometer (km) *required</label>
+                        <input type="number" id="startMileage" placeholder="e.g. 45230" step="1" min="0" inputmode="numeric" required>
+                    </div>
+                    <div class="mileage-input-group">
+                        <label>Est. End Odometer (optional)</label>
+                        <input type="number" id="estEndMileage" placeholder="For later" step="1" min="0" inputmode="numeric" disabled style="opacity:0.5;">
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" id="startDriveBtn">
+                    Start Drive — <span id="startDriveLabel">Car</span>
+                </button>
+                <div style="font-size:0.7rem;color:var(--text3);margin-top:8px;text-align:center;">
+                    GPS will track distance automatically • Odometer start required
+                </div>
+            </div>
+
+            <div class="tracking-panel" id="trackingPanel" style="display:none;">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                    <span style="font-weight:700;font-size:1rem;display:flex;align-items:center;gap:8px;">
+                        <span class="tracking-dot"></span> Tracking Active
+                        <span id="pauseStatus" style="font-size:0.7rem;color:var(--text3);font-weight:normal;display:none;">(Paused)</span>
+                    </span>
+                    <span style="font-size:0.8rem;color:var(--text3);display:flex;align-items:center;gap:6px;" id="trackingVehicleLabel">
+                        <span class="veh-icon-sm"><svg viewBox="0 0 122.88 35.03" fill="currentColor"><path d="M99.42,13.57c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73 C88.69,18.37,93.49,13.57,99.42,13.57z M79.05,5c-0.59,1.27-1.06,2.69-1.42,4.23c-0.82,2.57,0.39,3.11,3.19,2.06 c2.06-1.23,4.12-2.47,6.18-3.7c1.05-0.74,1.55-1.47,1.38-2.19c-0.34-1.42-3.08-2.16-5.33-2.6C80.19,2.23,80.39,2.11,79.05,5z M23.86,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99c-2.75,0-4.99-2.23-4.99-4.99 C18.87,21.54,21.1,19.31,23.86,19.31z M99.42,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99 c-2.75,0-4.99-2.23-4.99-4.99C94.43,21.54,96.66,19.31,99.42,19.31z M46.14,12.5c2.77-2.97,5.97-4.9,9.67-6.76 c8.1-4.08,13.06-3.58,21.66-3.58l-2.89,7.5c-1.21,1.6-2.58,2.73-4.66,2.84H46.14z M23.86,13.57 c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73C13.13,18.37,17.93,13.57,23.86,13.57z M40.82,10.3c3.52-2.19,7.35-4.15,11.59-5.82c12.91-5.09,22.78-6,36.32-1.9c4.08,1.55,8.16,3.1,12.24,4.06 c4.03,0.96,21.48,1.88,21.91,4.81l-4.31,5.15c1.57,1.36,2.85,3.03,3.32,5.64c-0.13,1.61-0.57,2.96-1.33,4.04 c-1.29,1.85-5.07,3.76-7.11,2.67c-0.65-0.35-1.02-1.05-1.01-2.24c0.06-23.9-28.79-21.18-26.62,2.82H35.48 C44.8,5.49,5.04,5.4,12.1,28.7C9.62,31.38,3.77,27.34,0,18.75c1.03-1.02,2.16-1.99,3.42-2.89c-0.06-0.05,0.06,0.19-0.15-0.17 c-0.21-0.36,0.51-1.87,1.99-2.74C13.02,8.4,31.73,8.52,40.82,10.3z"/></svg></span>
+                        Car
+                    </span>
+                </div>
+                <div class="tracking-stats">
+                    <div class="tracking-stat">
+                        <div class="stat-label">GPS Distance</div>
+                        <div class="stat-value highlight" id="liveDistance">0.00 km</div>
+                    </div>
+                    <div class="tracking-stat">
+                        <div class="stat-label">Duration</div>
+                        <div class="stat-value" id="liveDuration">00:00:00</div>
+                    </div>
+                    <div class="tracking-stat">
+                        <div class="stat-label">Speed</div>
+                        <div class="stat-value" id="liveSpeed">-- km/h</div>
+                    </div>
+                    <div class="tracking-stat">
+                        <div class="stat-label">Est. Cost</div>
+                        <div class="stat-value highlight" id="liveCost">0.00 €</div>
+                    </div>
+                </div>
+                <div class="gps-status" id="gpsStatus">● Acquiring GPS signal...</div>
+                <div class="tracking-actions">
+                    <button class="btn btn-pause" id="pauseDriveBtn">⏸️ Pause</button>
+                    <button class="btn btn-danger" id="endDriveBtn">End Drive</button>
+                </div>
+            </div>
+
+            <div class="card accent-border" id="summaryPanel" style="display:none;">
+                <div class="card-header">
+                    <span class="card-title">Drive Summary</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.85rem; margin-bottom:12px;">
+                    <div><span style="color:var(--text3);">GPS Distance:</span><br><strong id="summaryGpsDist">0.00 km</strong></div>
+                    <div><span style="color:var(--text3);">Duration:</span><br><strong id="summaryDuration">00:00:00</strong></div>
+                    <div><span style="color:var(--text3);">Start Time:</span><br><strong id="summaryStart">--</strong></div>
+                    <div><span style="color:var(--text3);">End Time:</span><br><strong id="summaryEnd">--</strong></div>
+                </div>
+                <div class="mileage-row" style="margin-bottom:10px;">
+                    <div class="mileage-input-group">
+                        <label>Start Odometer (km)</label>
+                        <input type="number" id="summaryStartMileage" step="1" min="0" inputmode="numeric" readonly style="opacity:0.7;">
+                    </div>
+                    <div class="mileage-input-group">
+                        <label>End Odometer (km) *</label>
+                        <input type="number" id="summaryEndMileage" placeholder="Enter end mileage" step="1" min="0" inputmode="numeric">
+                    </div>
+                </div>
+                <div style="font-size:0.75rem;color:var(--text3);margin-bottom:8px;" id="odometerDiffDisplay"></div>
+                <input type="text" class="desc-input" id="summaryDesc" placeholder="What was this drive about? (optional)" maxlength="200" style="margin-bottom:12px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn btn-primary" id="saveDriveBtn" style="flex:1;">Save Drive</button>
+                    <button class="btn btn-outline" id="discardDriveBtn">Discard</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── History Section ── -->
+        <div class="card" id="historyCard">
+            <div class="history-header">
+                <span class="card-title">Drive History</span>
+                <span class="history-count" id="historyCount">0 drives</span>
+            </div>
+            <div class="summary-bar" id="summaryBar" style="display:none;">
+                <div class="summary-chip">Total: <strong id="sumTotalDist">0 km</strong></div>
+                <div class="summary-chip">Cost: <strong id="sumTotalCost">0.00 €</strong></div>
+                <div class="summary-chip">Drives: <strong id="sumTotalDrives">0</strong></div>
+            </div>
+            <div id="drivesList" style="display:flex;flex-direction:column;gap:10px; margin-top:6px;">
+                <div style="text-align:center;color:var(--text3);padding:20px;font-size:0.9rem;">
+                    No drives logged yet.<br>Start your first drive above!
+                </div>
+            </div>
+            <div class="import-export-buttons">
+                <button class="btn btn-outline" id="exportBtn">📥 Export CSV</button>
+                <button class="btn btn-outline" id="importBtn">📂 Import</button>
+            </div>
+            <input type="file" id="fileInput" accept=".csv,.json" style="display:none;">
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Hidden download link -->
+    <a id="downloadLink" style="display:none;"></a>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker registered successfully.'))
+                .catch(err => console.warn('Service Worker registration failed:', err));
+        }
+    </script>
+
+    <script>
+        (function() {
+            // ── SVG icon definitions (for reuse) ──
+            const carIconSVG = `<svg viewBox="0 0 122.88 35.03" fill="currentColor"><path d="M99.42,13.57c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73 C88.69,18.37,93.49,13.57,99.42,13.57z M79.05,5c-0.59,1.27-1.06,2.69-1.42,4.23c-0.82,2.57,0.39,3.11,3.19,2.06 c2.06-1.23,4.12-2.47,6.18-3.7c1.05-0.74,1.55-1.47,1.38-2.19c-0.34-1.42-3.08-2.16-5.33-2.6C80.19,2.23,80.39,2.11,79.05,5z M23.86,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99c-2.75,0-4.99-2.23-4.99-4.99 C18.87,21.54,21.1,19.31,23.86,19.31z M99.42,19.31c2.75,0,4.99,2.23,4.99,4.99c0,2.75-2.23,4.99-4.99,4.99 c-2.75,0-4.99-2.23-4.99-4.99C94.43,21.54,96.66,19.31,99.42,19.31z M46.14,12.5c2.77-2.97,5.97-4.9,9.67-6.76 c8.1-4.08,13.06-3.58,21.66-3.58l-2.89,7.5c-1.21,1.6-2.58,2.73-4.66,2.84H46.14z M23.86,13.57 c5.93,0,10.73,4.8,10.73,10.73c0,5.93-4.8,10.73-10.73,10.73s-10.73-4.8-10.73-10.73C13.13,18.37,17.93,13.57,23.86,13.57z M40.82,10.3c3.52-2.19,7.35-4.15,11.59-5.82c12.91-5.09,22.78-6,36.32-1.9c4.08,1.55,8.16,3.1,12.24,4.06 c4.03,0.96,21.48,1.88,21.91,4.81l-4.31,5.15c1.57,1.36,2.85,3.03,3.32,5.64c-0.13,1.61-0.57,2.96-1.33,4.04 c-1.29,1.85-5.07,3.76-7.11,2.67c-0.65-0.35-1.02-1.05-1.01-2.24c0.06-23.9-28.79-21.18-26.62,2.82H35.48 C44.8,5.49,5.04,5.4,12.1,28.7C9.62,31.38,3.77,27.34,0,18.75c1.03-1.02,2.16-1.99,3.42-2.89c-0.06-0.05,0.06,0.19-0.15-0.17 c-0.21-0.36,0.51-1.87,1.99-2.74C13.02,8.4,31.73,8.52,40.82,10.3z"/></svg>`;
+            const motorcycleIconSVG = `<svg viewBox="0 0 122.88 66.83" fill="currentColor"><path d="M61.7,17.72c9.72-2.36,21.24-2.33,30.28-1.54C84.25,29.95,67.62,28.03,61.7,17.72z M25.18,57.6 l-4.13-4.13v5.72C22.58,58.99,23.98,58.43,25.18,57.6z M18.3,59.16v-5.68l-4.03,4.03 C15.44,58.35,16.81,58.92,18.3,59.16z M12.28,55.6l4.07-4.07h-5.91C10.72,53.04,11.36,54.43,12.28,55.6z M10.32,48.77h6.03l-4.41-4.41C11.06,45.64,10.49,47.14,10.32,48.77z M13.82,42.34l4.48,4.48v-6.47 C16.62,40.61,15.09,41.31,13.82,42.34z M21.06,40.31v6.5l4.58-4.58C24.34,41.22,22.77,40.54,21.06,40.31z M27.55,44.23l-4.54,4.54h6.26C29.09,47.08,28.48,45.53,27.55,44.23z M29.15,51.52h-6.14l4.2,4.2 C28.17,54.53,28.85,53.09,29.15,51.52z M110.91,57.79l-4.31-4.31v5.77C108.18,59.11,109.65,58.59,110.91,57.79z M103.84,59.07 v-5.6l-3.84,3.84C101.12,58.16,102.42,58.78,103.84,59.07z M98.08,55.33l3.04-3.04l-4.38,0.4C97.05,53.65,97.51,54.54,98.08,55.33z M97.99,44.86l-0.22-0.22l-0.08,0.13L97.99,44.86z M99.57,42.55l3.91,3.91c0.11-0.09,0.23-0.18,0.36-0.26v-5.76 C102.23,40.77,100.77,41.51,99.57,42.55z M106.6,40.26v5.33c0.33,0.05,0.65,0.14,0.96,0.27l3.82-3.82 C110.02,41.05,108.38,40.41,106.6,40.26z M113.36,43.96l-3.79,3.79c0.16,0.32,0.28,0.66,0.34,1.02h5.36 C115.09,46.97,114.4,45.32,113.36,43.96z M115.16,51.52h-5.71c-0.11,0.19-0.23,0.36-0.37,0.52l3.93,3.93 C114.08,54.73,114.84,53.21,115.16,51.52z M41.6,9.27c1.16,0.42,1.71,1.57,1.05,2.98c-0.89,1.89-1.88,1.83-3.69,2.29 l-1.15,0.29c-1.47,0.4-2.66,0.39-3.49,0.11l-1.04,0.22l-1,2.16c4.1,1,7.87-0.59,11.39-4.15c5.05-0.79,9.93-0.31,14.59,1.87 c0.42,4.29,1.72,7.56,3.73,10c6.25,7.56,17.94,6.94,25.7,2.07c3.65-2.29,6.66-5.57,9.07-9.76c5.34-0.02,10.62,0.28,15.8,1.1 l1.54,3.51C94.89,22.22,83.5,35.66,78.98,56.6H45.08c-2.27-13.18-8.66-21.8-17.72-27.47l2.47,1.8l-1.69,3.92 c5.21,2.93,8.73,8.5,8.73,14.9c0,9.43-7.65,17.08-17.08,17.08S2.71,59.19,2.71,49.75c0-8.35,6-15.31,13.92-16.79 c-4.53,0.49-9.71,2.11-15.43,4.66L0,35.32c5.1-4.62,12.93-7.45,24.42-7.88c-3.85-2.03-8.11-3.61-12.68-4.85 C17.25,11.86,24.28,4.01,33.35,0l1.32,2.19c-3.04,3.46-5.5,7.68-7.35,12.72c0.8,0.57,1.59,1.05,2.36,1.43l1.39-2.98 c0.21-0.44,0.62-0.73,1.07-0.79l0.96-0.2c0.04-0.1,0.1-0.21,0.16-0.32c0.95-1.68,2.9-2.1,4.77-2.49C39.18,9.35,40.47,8.86,41.6,9.27z M110.49,23.7l3.55-0.49l8.46,8.9l-2.24,0.78L110.49,23.7z M105.8,32.67c9.43,0,17.08,7.65,17.08,17.08c0,9.43-7.65,17.08-17.08,17.08c-8.18,0-15.02-5.76-16.69-13.44 l-6.08,0.56c0.77-4.4,2.23-8.49,4.22-12.33l3.06,0.92C93.03,36.71,98.94,32.67,105.8,32.67z"/></svg>`;
+
+            // ── DOM refs ──
+            const body = document.body;
+            const btnCar = document.getElementById('btnCar');
+            const btnMotorcycle = document.getElementById('btnMotorcycle');
+            const activeVehicleLabel = document.getElementById('activeVehicleLabel');
+            const trackingVehicleLabel = document.getElementById('trackingVehicleLabel');
+            const plateInput = document.getElementById('plateInput');
+            const platePreview = document.getElementById('platePreview');
+            const rateDisplay = document.getElementById('rateDisplay');
+            const editRateBtn = document.getElementById('editRateBtn');
+            const rateEditor = document.getElementById('rateEditor');
+            const rateInput = document.getElementById('rateInput');
+            const saveRateBtn = document.getElementById('saveRateBtn');
+            const cancelRateBtn = document.getElementById('cancelRateBtn');
+            const savePlateBtn = document.getElementById('savePlateBtn');
+            const startDriveBtn = document.getElementById('startDriveBtn');
+            const startDriveLabel = document.getElementById('startDriveLabel');
+            const startMileageInput = document.getElementById('startMileage');
+            const idlePanel = document.getElementById('idlePanel');
+            const trackingPanel = document.getElementById('trackingPanel');
+            const liveDistance = document.getElementById('liveDistance');
+            const liveDuration = document.getElementById('liveDuration');
+            const liveSpeed = document.getElementById('liveSpeed');
+            const liveCost = document.getElementById('liveCost');
+            const gpsStatus = document.getElementById('gpsStatus');
+            const endDriveBtn = document.getElementById('endDriveBtn');
+            const pauseDriveBtn = document.getElementById('pauseDriveBtn');
+            const pauseStatus = document.getElementById('pauseStatus');
+            const summaryPanel = document.getElementById('summaryPanel');
+            const summaryGpsDist = document.getElementById('summaryGpsDist');
+            const summaryDuration = document.getElementById('summaryDuration');
+            const summaryStart = document.getElementById('summaryStart');
+            const summaryEnd = document.getElementById('summaryEnd');
+            const summaryStartMileage = document.getElementById('summaryStartMileage');
+            const summaryEndMileage = document.getElementById('summaryEndMileage');
+            const odometerDiffDisplay = document.getElementById('odometerDiffDisplay');
+            const summaryDesc = document.getElementById('summaryDesc');
+            const saveDriveBtn = document.getElementById('saveDriveBtn');
+            const discardDriveBtn = document.getElementById('discardDriveBtn');
+            const drivesList = document.getElementById('drivesList');
+            const historyCount = document.getElementById('historyCount');
+            const summaryBar = document.getElementById('summaryBar');
+            const sumTotalDist = document.getElementById('sumTotalDist');
+            const sumTotalCost = document.getElementById('sumTotalCost');
+            const sumTotalDrives = document.getElementById('sumTotalDrives');
+            const exportBtn = document.getElementById('exportBtn');
+            const importBtn = document.getElementById('importBtn');
+            const fileInput = document.getElementById('fileInput');
+            const downloadLink = document.getElementById('downloadLink');
+            const toast = document.getElementById('toast');
+            const gpsBanner = document.getElementById('gpsBanner');
+            const settingsCard = document.getElementById('settingsCard');
+
+            // ── State ──
+            const STORAGE_KEY = 'drivelogger_data';
+            const ACTIVE_DRIVE_KEY = 'drivelogger_active_drive';
+
+            let currentVehicle = 'car';
+            let settings = {
+                carRate: 0.5,
+                motorcycleRate: 0.25,
+                carPlate: '',
+                motorcyclePlate: '',
+                lastCarOdometer: '',
+                lastMotorcycleOdometer: ''
+            };
+            let drives = [];
+            let activeDrive = null;
+            let gpsWatchId = null;
+            let previousPosition = null;
+            let accumulatedGpsDistance = 0;
+            let gpsAvailable = null;
+            let durationInterval = null;
+            let driveStartTimestamp = null;
+
+            // Pause state
+            let isPaused = false;
+            let pausedDuration = 0; // seconds already elapsed before pause
+
+            // ── Storage ──
+            function loadFromStorage() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        const data = JSON.parse(raw);
+                        if (data.settings) settings = { ...settings, ...data.settings };
+                        if (data.drives) drives = data.drives;
+                    }
+                } catch (e) { console.warn(e); }
+                try {
+                    const rawActive = localStorage.getItem(ACTIVE_DRIVE_KEY);
+                    if (rawActive) {
+                        const ad = JSON.parse(rawActive);
+                        if (ad && ad.startDateTime && !ad.endDateTime) {
+                            activeDrive = ad;
+                            activeDrive.gpsDistance = activeDrive.gpsDistance || 0;
+                            activeDrive.accumulatedPositions = activeDrive.accumulatedPositions || 0;
+                            currentVehicle = activeDrive.vehicle || 'car';
+                            accumulatedGpsDistance = activeDrive.gpsDistance || 0;
+                            driveStartTimestamp = new Date(activeDrive.startDateTime).getTime();
+                            previousPosition = activeDrive.lastPosition || null;
+                            if (activeDrive.isPaused) {
+                                isPaused = true;
+                                pausedDuration = activeDrive.pausedDuration || 0;
+                                pauseDriveBtn.textContent = '▶️ Resume';
+                                pauseDriveBtn.classList.add('paused');
+                                pauseStatus.style.display = 'inline';
+                            }
+                        } else {
+                            localStorage.removeItem(ACTIVE_DRIVE_KEY);
+                        }
+                    }
+                } catch (e) { console.warn(e); }
+            }
+
+            function saveToStorage() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings, drives }));
+                } catch (e) { showToast('Storage full! Export & clear some drives.', 'error'); }
+            }
+
+            function saveActiveDriveToStorage() {
+                if (activeDrive) {
+                    const ad = {
+                        ...activeDrive,
+                        gpsDistance: accumulatedGpsDistance,
+                        lastPosition: previousPosition,
+                        watchId: null,
+                        isPaused: isPaused,
+                        pausedDuration: pausedDuration
+                    };
+                    try { localStorage.setItem(ACTIVE_DRIVE_KEY, JSON.stringify(ad)); } catch (e) { /* ignore */ }
+                } else {
+                    localStorage.removeItem(ACTIVE_DRIVE_KEY);
+                }
+            }
+
+            // ── Helpers ──
+            function getCurrentRate() { return currentVehicle === 'car' ? settings.carRate : settings.motorcycleRate; }
+
+            function getCurrentPlate() { return currentVehicle === 'car' ? settings.carPlate : settings.motorcyclePlate; }
+
+            function setCurrentPlate(val) {
+                if (currentVehicle === 'car') settings.carPlate = val;
+                else settings.motorcyclePlate = val;
+            }
+
+            function getLastOdometer() {
+                return currentVehicle === 'car' ? settings.lastCarOdometer : settings.lastMotorcycleOdometer;
+            }
+
+            function setLastOdometer(val) {
+                if (currentVehicle === 'car') settings.lastCarOdometer = val;
+                else settings.lastMotorcycleOdometer = val;
+            }
+
+            function formatCurrency(amount) { return amount.toFixed(2) + ' €'; }
+
+            function formatDistance(km) {
+                if (km < 0.01) return '0.00 km';
+                if (km < 1) return km.toFixed(3) + ' km';
+                return km.toFixed(2) + ' km';
+            }
+
+            function formatDuration(seconds) {
+                const h = Math.floor(seconds / 3600);
+                const m = Math.floor((seconds % 3600) / 60);
+                const s = Math.floor(seconds % 60);
+                return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+            }
+
+            function formatDateTime(isoString) {
+                if (!isoString) return '--';
+                const d = new Date(isoString);
+                return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
+                    ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            }
+
+            function formatDateForCSV(isoString) {
+                if (!isoString) return '';
+                const d = new Date(isoString);
+                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate())
+                    .padStart(2, '0');
+            }
+
+            function formatTimeForCSV(isoString) {
+                if (!isoString) return '';
+                const d = new Date(isoString);
+                return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+            }
+
+            function haversineDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+
+            function showToast(message, type = '') {
+                toast.textContent = message;
+                toast.className = 'toast ' + type + ' show';
+                clearTimeout(toast._timeout);
+                toast._timeout = setTimeout(() => toast.classList.remove('show'), 2200);
+            }
+
+            function escapeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ── Robust number parser for CSV ──
+            function parseCSVNumber(str) {
+                if (!str || str.trim() === '') return 0;
+                let s = str.trim();
+                // Detect if comma is used as decimal separator (e.g., "0,602")
+                // Remove any thousands separators (dots) if comma exists
+                if (s.includes(',') && !s.includes('.')) {
+                    // Only comma, treat as decimal
+                    s = s.replace(',', '.');
+                } else if (s.includes(',') && s.includes('.')) {
+                    // Both present: likely "1,234.56" -> remove commas
+                    s = s.replace(/,/g, '');
+                }
+                const num = parseFloat(s);
+                return isNaN(num) ? 0 : num;
+            }
+
+            // ── CSV Export ──
+            function exportData() {
+                if (drives.length === 0) {
+                    showToast('No drives to export.', 'error');
+                    return;
+                }
+                const rows = [];
+                const headers = [
+                    '#', 'Vehicle', 'Plate',
+                    'Start Date', 'Start Time',
+                    'End Date', 'End Time',
+                    'Start Mileage (km)', 'End Mileage (km)',
+                    'Odometer Dist (km)', 'GPS Dist (km)',
+                    'Duration (hh:mm:ss)', 'Duration (sec)',
+                    'Rate (€/km)', 'Cost (€)', 'Description'
+                ];
+                rows.push(headers.join(';'));
+
+                const sorted = [...drives].sort((a, b) => new Date(b.startDateTime) - new Date(a.startDateTime));
+                let index = 1;
+                let totalDistAll = 0,
+                    totalCostAll = 0;
+                let totalDistCar = 0,
+                    totalCostCar = 0;
+                let totalDistMoto = 0,
+                    totalCostMoto = 0;
+                let countAll = 0,
+                    countCar = 0,
+                    countMoto = 0;
+
+                sorted.forEach(d => {
+                    const sm = (d.startMileage !== null && d.startMileage !== undefined) ? d.startMileage : '';
+                    const em = (d.endMileage !== null && d.endMileage !== undefined) ? d.endMileage : '';
+                    const odo = (sm !== '' && em !== '') ? Math.abs(em - sm) : 0;
+                    const gps = d.gpsDistance || 0;
+                    const dist = gps > 0 ? gps : odo;
+                    const rate = d.rate || getCurrentRate();
+                    const cost = dist * rate;
+                    const dur = d.duration || 0;
+
+                    const esc = (val) => {
+                        if (val === null || val === undefined) return '';
+                        const str = String(val);
+                        if (str.includes(';') || str.includes('"') || str.includes('\n')) {
+                            return '"' + str.replace(/"/g, '""') + '"';
+                        }
+                        return str;
+                    };
+
+                    totalDistAll += dist;
+                    totalCostAll += cost;
+                    countAll++;
+                    if (d.vehicle === 'car') {
+                        totalDistCar += dist;
+                        totalCostCar += cost;
+                        countCar++;
+                    } else {
+                        totalDistMoto += dist;
+                        totalCostMoto += cost;
+                        countMoto++;
+                    }
+
+                    rows.push([
+                        index++,
+                        esc(d.vehicle === 'car' ? 'Car' : 'Motorcycle'),
+                        esc(d.plate || ''),
+                        esc(formatDateForCSV(d.startDateTime)),
+                        esc(formatTimeForCSV(d.startDateTime)),
+                        esc(d.endDateTime ? formatDateForCSV(d.endDateTime) : ''),
+                        esc(d.endDateTime ? formatTimeForCSV(d.endDateTime) : ''),
+                        esc(sm !== '' ? sm : ''),
+                        esc(em !== '' ? em : ''),
+                        esc(odo.toFixed(3)),
+                        esc(gps.toFixed(3)),
+                        esc(formatDuration(dur)),
+                        esc(dur),
+                        esc(rate.toFixed(2)),
+                        esc(cost.toFixed(2)),
+                        esc(d.description || '')
+                    ].join(';'));
+                });
+
+                rows.push('');
+                rows.push('# Totals – All');
+                rows.push('Total Distance (km);' + totalDistAll.toFixed(3));
+                rows.push('Total Cost (€);' + totalCostAll.toFixed(2));
+                rows.push('Total Drives;' + countAll);
+
+                rows.push('');
+                rows.push('# Totals – Car');
+                rows.push('Total Distance (km);' + totalDistCar.toFixed(3));
+                rows.push('Total Cost (€);' + totalCostCar.toFixed(2));
+                rows.push('Total Drives;' + countCar);
+
+                rows.push('');
+                rows.push('# Totals – Motorcycle');
+                rows.push('Total Distance (km);' + totalDistMoto.toFixed(3));
+                rows.push('Total Cost (€);' + totalCostMoto.toFixed(2));
+                rows.push('Total Drives;' + countMoto);
+
+                const csvStr = rows.join('\n');
+                const blob = new Blob(['\uFEFF' + csvStr], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                downloadLink.href = url;
+                downloadLink.download = 'drivelogger_export_' + new Date().toISOString().slice(0, 10) + '.csv';
+                downloadLink.click();
+                URL.revokeObjectURL(url);
+                showToast('CSV exported! ' + drives.length + ' drives', 'success');
+            }
+
+            // ── Import Logic (fixed with robust number parser) ──
+            function importData(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const content = e.target.result;
+                        let importedDrives = [];
+
+                        if (file.name.endsWith('.json')) {
+                            const jsonData = JSON.parse(content);
+                            if (jsonData.drives && Array.isArray(jsonData.drives)) {
+                                importedDrives = jsonData.drives;
+                            } else {
+                                showToast('Invalid JSON format – missing "drives" array.', 'error');
+                                return;
+                            }
+                        } else {
+                            // Parse CSV
+                            const lines = content.split('\n').filter(line => line.trim() !== '');
+                            let headerLine = null;
+                            let headerIndex = -1;
+                            // Find the header line (contains 'Vehicle' and 'Plate' and 'Start Date')
+                            for (let i = 0; i < lines.length; i++) {
+                                const line = lines[i];
+                                // Check if it contains the key columns (case-insensitive)
+                                if (line.toLowerCase().includes('vehicle') &&
+                                    line.toLowerCase().includes('plate') &&
+                                    line.toLowerCase().includes('start date')) {
+                                    headerLine = line;
+                                    headerIndex = i;
+                                    break;
+                                }
+                            }
+
+                            if (!headerLine) {
+                                showToast('Invalid CSV – header not found.', 'error');
+                                return;
+                            }
+
+                            // Parse header
+                            const header = headerLine.split(';').map(h => h.trim());
+                            const idxVehicle = header.findIndex(h => h.toLowerCase() === 'vehicle');
+                            const idxPlate = header.findIndex(h => h.toLowerCase() === 'plate');
+                            const idxStartDate = header.findIndex(h => h.toLowerCase() === 'start date');
+                            const idxStartTime = header.findIndex(h => h.toLowerCase() === 'start time');
+                            const idxEndDate = header.findIndex(h => h.toLowerCase() === 'end date');
+                            const idxEndTime = header.findIndex(h => h.toLowerCase() === 'end time');
+                            const idxStartMileage = header.findIndex(h => h.toLowerCase() === 'start mileage (km)');
+                            const idxEndMileage = header.findIndex(h => h.toLowerCase() === 'end mileage (km)');
+                            const idxGpsDist = header.findIndex(h => h.toLowerCase() === 'gps dist (km)');
+                            const idxDuration = header.findIndex(h => h.toLowerCase() === 'duration (sec)');
+                            const idxRate = header.findIndex(h => h.toLowerCase() === 'rate (€/km)');
+                            const idxDescription = header.findIndex(h => h.toLowerCase() === 'description');
+
+                            if (idxVehicle === -1 || idxStartDate === -1 || idxStartTime === -1) {
+                                showToast('Invalid CSV – required columns missing.', 'error');
+                                return;
+                            }
+
+                            // Process data rows (skip header and comment lines)
+                            for (let i = headerIndex + 1; i < lines.length; i++) {
+                                const line = lines[i];
+                                if (line.startsWith('#')) continue;
+                                if (line.trim() === '') continue;
+
+                                // Parse CSV respecting quotes
+                                let values = [];
+                                let current = '';
+                                let insideQuotes = false;
+                                for (let ch of line) {
+                                    if (ch === '"') {
+                                        insideQuotes = !insideQuotes;
+                                        continue;
+                                    }
+                                    if (ch === ';' && !insideQuotes) {
+                                        values.push(current);
+                                        current = '';
+                                    } else {
+                                        current += ch;
+                                    }
+                                }
+                                values.push(current);
+
+                                const vehicle = values[idxVehicle]?.trim().toLowerCase() === 'car' ? 'car' : 'motorcycle';
+                                const plate = values[idxPlate]?.trim() || '';
+                                const startDate = values[idxStartDate]?.trim() || '';
+                                const startTime = values[idxStartTime]?.trim() || '00:00';
+                                const endDate = values[idxEndDate]?.trim() || '';
+                                const endTime = values[idxEndTime]?.trim() || '00:00';
+                                const startMileage = parseCSVNumber(values[idxStartMileage]);
+                                const endMileage = parseCSVNumber(values[idxEndMileage]);
+                                const gpsDist = parseCSVNumber(values[idxGpsDist]);
+                                const duration = parseCSVNumber(values[idxDuration]);
+                                const rate = parseCSVNumber(values[idxRate]) || getCurrentRate();
+                                const description = values[idxDescription]?.trim() || 'Imported';
+
+                                if (startDate && endDate) {
+                                    const startDateTime = new Date(startDate + 'T' + startTime + ':00').toISOString();
+                                    const endDateTime = new Date(endDate + 'T' + endTime + ':00').toISOString();
+
+                                    importedDrives.push({
+                                        id: 'imp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                                        vehicle: vehicle,
+                                        plate: plate,
+                                        startMileage: startMileage,
+                                        endMileage: endMileage,
+                                        gpsDistance: gpsDist,
+                                        duration: duration,
+                                        rate: rate,
+                                        description: description,
+                                        startDateTime: startDateTime,
+                                        endDateTime: endDateTime
+                                    });
+                                }
+                            }
+                        }
+
+                        if (importedDrives.length === 0) {
+                            showToast('No valid drives found in the file.', 'error');
+                            return;
+                        }
+
+                        const existingIds = new Set(drives.map(d => d.id));
+                        let newCount = 0;
+                        for (let d of importedDrives) {
+                            if (!d.id) d.id = 'imp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                            if (!d.vehicle) d.vehicle = 'car';
+                            if (!d.description) d.description = 'Imported';
+                            if (!d.rate) d.rate = (d.vehicle === 'car' ? settings.carRate : settings.motorcycleRate);
+                            if (!d.startDateTime || !d.endDateTime) continue;
+
+                            if (!existingIds.has(d.id)) {
+                                drives.push(d);
+                                existingIds.add(d.id);
+                                newCount++;
+                            }
+                        }
+
+                        if (newCount === 0) {
+                            showToast('All drives already exist (no new drives added).', '');
+                            return;
+                        }
+
+                        drives.sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+
+                        saveToStorage();
+                        updateHistoryUI();
+                        showToast('Imported ' + newCount + ' drives successfully!', 'success');
+
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Error importing file: ' + err.message, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            // ── UI updates ──
+            function getVehicleIconSVG(vehicle) {
+                return vehicle === 'car' ? carIconSVG : motorcycleIconSVG;
+            }
+
+            function updateVehicleUI() {
+                body.className = currentVehicle === 'car' ? 'vehicle-car' : 'vehicle-motorcycle';
+                btnCar.classList.toggle('active', currentVehicle === 'car');
+                btnMotorcycle.classList.toggle('active', currentVehicle === 'motorcycle');
+                activeVehicleLabel.textContent = currentVehicle === 'car' ? 'Car' : 'Motorcycle';
+                startDriveLabel.textContent = currentVehicle === 'car' ? 'Car' : 'Motorcycle';
+
+                const iconSVG = getVehicleIconSVG(currentVehicle);
+                const vehicleName = currentVehicle === 'car' ? 'Car' : 'Motorcycle';
+                trackingVehicleLabel.innerHTML = `<span class="veh-icon-sm">${iconSVG}</span> ${vehicleName}`;
+
+                rateDisplay.textContent = formatCurrency(getCurrentRate()) + ' /km';
+                rateInput.value = getCurrentRate().toFixed(2);
+                plateInput.value = getCurrentPlate();
+                platePreview.textContent = getCurrentPlate() ? 'Plate: ' + getCurrentPlate() : '';
+
+                const lastOdo = getLastOdometer();
+                if (lastOdo !== '' && !isNaN(parseFloat(lastOdo))) {
+                    startMileageInput.value = lastOdo;
+                } else {
+                    startMileageInput.value = '';
+                }
+
+                const carColor = '#99bef5';
+                const motorcycleColor = '#e3890b';
+                const accent = currentVehicle === 'car' ? carColor : motorcycleColor;
+                const accent2 = currentVehicle === 'car' ? '#7aa3d9' : '#b87109';
+                const glow = currentVehicle === 'car' ? 'rgba(153,190,245,0.25)' : 'rgba(227,137,11,0.25)';
+
+                settingsCard.style.borderLeftColor = accent;
+                document.documentElement.style.setProperty('--accent-glow', glow);
+                document.documentElement.style.setProperty('--accent', accent);
+                document.documentElement.style.setProperty('--accent2', accent2);
+            }
+
+            function updateHistoryUI() {
+                drivesList.innerHTML = '';
+                if (drives.length === 0) {
+                    drivesList.innerHTML =
+                        '<div style="text-align:center;color:var(--text3);padding:20px;font-size:0.9rem;">No drives logged yet.<br>Start your first drive above!</div>';
+                    historyCount.textContent = '0 drives';
+                    summaryBar.style.display = 'none';
+                } else {
+                    historyCount.textContent = drives.length + ' drive' + (drives.length !== 1 ? 's' : '');
+                    summaryBar.style.display = 'flex';
+                    let totalDist = 0,
+                        totalCost = 0;
+                    const sortedDrives = [...drives].sort((a, b) => new Date(b.startDateTime) - new Date(a
+                    .startDateTime));
+                    sortedDrives.forEach(d => {
+                        const dist = d.gpsDistance > 0 ? d.gpsDistance : (d.endMileage && d.startMileage ?
+                            Math.abs(d.endMileage - d.startMileage) : 0);
+                        const cost = dist * (d.rate || getCurrentRate());
+                        totalDist += dist;
+                        totalCost += cost;
+                        const card = document.createElement('div');
+                        card.className = 'drive-card';
+                        const vehLabel = d.vehicle === 'car' ? 'Car' : 'Motorcycle';
+                        const iconSVG = getVehicleIconSVG(d.vehicle);
+                        const iconHtml = `<span class="veh-icon-sm">${iconSVG}</span>`;
+                        card.innerHTML = `
+                            <div class="drive-top">
+                                <span class="drive-vehicle">${iconHtml} ${vehLabel}${d.plate ? ' <span style="font-size:0.7rem;color:var(--text3);">(' + d.plate + ')</span>' : ''}</span>
+                                <span class="drive-cost">${formatCurrency(cost)}</span>
+                            </div>
+                            <div class="drive-details">
+                                <span>📏 ${formatDistance(dist)}</span>
+                                <span>⏱️ ${formatDuration(d.duration || 0)}</span>
+                                <span>📅 ${formatDateTime(d.startDateTime)}</span>
+                            </div>
+                            ${d.description ? '<div class="drive-desc">📝 ' + escapeHTML(d.description) + '</div>' : ''}
+                            <div style="font-size:0.7rem;color:var(--text3);">
+                                GPS: ${d.gpsDistance > 0 ? formatDistance(d.gpsDistance) : 'N/A'} | Odo: ${d.startMileage !== null ? d.startMileage + '→' + (d.endMileage !== null ? d.endMileage : '?') + ' km' : 'N/A'}
+                            </div>
+                            <div class="drive-actions">
+                                <button class="btn btn-sm btn-outline delete-drive-btn" data-id="${d.id}">🗑️</button>
+                            </div>`;
+                        drivesList.appendChild(card);
+                    });
+                    sumTotalDist.textContent = formatDistance(totalDist);
+                    sumTotalCost.textContent = formatCurrency(totalCost);
+                    sumTotalDrives.textContent = drives.length;
+                    drivesList.querySelectorAll('.delete-drive-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const id = this.getAttribute('data-id');
+                            drives = drives.filter(d => d.id !== id);
+                            saveToStorage();
+                            updateHistoryUI();
+                            showToast('Drive deleted', '');
+                        });
+                    });
+                }
+            }
+
+            function updateLiveStats() {
+                if (!activeDrive) return;
+                const now = Date.now();
+                let elapsedSec;
+                if (isPaused) {
+                    elapsedSec = pausedDuration;
+                } else {
+                    elapsedSec = Math.floor((now - driveStartTimestamp) / 1000);
+                }
+                liveDistance.textContent = formatDistance(accumulatedGpsDistance);
+                liveDuration.textContent = formatDuration(elapsedSec);
+                liveCost.textContent = formatCurrency(accumulatedGpsDistance * getCurrentRate());
+            }
+
+            // ── GPS ──
+            function startGpsTracking() {
+                if (!navigator.geolocation) {
+                    gpsAvailable = false;
+                    gpsBanner.style.display = 'flex';
+                    gpsStatus.textContent = 'GPS not supported on this device';
+                    gpsStatus.className = 'gps-status poor';
+                    return;
+                }
+                gpsBanner.style.display = 'none';
+                gpsStatus.textContent = '● Acquiring GPS signal...';
+                gpsStatus.className = 'gps-status';
+                previousPosition = activeDrive?.lastPosition || null;
+
+                gpsWatchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        gpsAvailable = true;
+                        gpsBanner.style.display = 'none';
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        const accuracy = position.coords.accuracy;
+                        const speed = position.coords.speed;
+
+                        if (accuracy < 30) {
+                            gpsStatus.textContent = '● GPS active — accuracy: ' + Math.round(accuracy) + 'm';
+                            gpsStatus.className = 'gps-status good';
+                        } else if (accuracy < 100) {
+                            gpsStatus.textContent = '● GPS moderate — accuracy: ' + Math.round(accuracy) + 'm';
+                            gpsStatus.className = 'gps-status';
+                        } else {
+                            gpsStatus.textContent = '● GPS poor accuracy: ' + Math.round(accuracy) + 'm';
+                            gpsStatus.className = 'gps-status poor';
+                        }
+
+                        if (speed !== null && speed !== undefined) {
+                            liveSpeed.textContent = (speed * 3.6).toFixed(1) + ' km/h';
+                        } else {
+                            liveSpeed.textContent = '-- km/h';
+                        }
+
+                        if (previousPosition && previousPosition.lat !== null) {
+                            const dist = haversineDistance(previousPosition.lat, previousPosition.lon, lat, lon);
+                            if (dist < 0.5) accumulatedGpsDistance += dist;
+                            else if (dist < 5) accumulatedGpsDistance += Math.min(dist, 0.3);
+                        }
+                        previousPosition = { lat, lon, timestamp: position.timestamp };
+                        if (activeDrive) {
+                            activeDrive.lastPosition = previousPosition;
+                            activeDrive.gpsDistance = accumulatedGpsDistance;
+                        }
+                        updateLiveStats();
+                        saveActiveDriveToStorage();
+                    },
+                    (error) => {
+                        console.warn('GPS error:', error);
+                        gpsAvailable = false;
+                        gpsBanner.style.display = 'flex';
+                        gpsStatus.textContent = 'GPS error: ' + error.message;
+                        gpsStatus.className = 'gps-status poor';
+                        liveSpeed.textContent = '-- km/h';
+                    }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 5000 }
+                );
+            }
+
+            function stopGpsTracking() {
+                if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId);
+                    gpsWatchId = null; }
+            }
+
+            // ── Pause / Resume ──
+            function togglePause() {
+                if (!activeDrive) return;
+                if (isPaused) {
+                    // Resume
+                    isPaused = false;
+                    driveStartTimestamp = Date.now() - pausedDuration * 1000;
+                    startGpsTracking();
+                    if (durationInterval) clearInterval(durationInterval);
+                    durationInterval = setInterval(() => {
+                        updateLiveStats();
+                        if (activeDrive) {
+                            const elapsedSec = Math.floor((Date.now() - driveStartTimestamp) / 1000);
+                            liveDuration.textContent = formatDuration(elapsedSec);
+                        }
+                    }, 500);
+                    pauseDriveBtn.textContent = '⏸️ Pause';
+                    pauseDriveBtn.classList.remove('paused');
+                    pauseStatus.style.display = 'none';
+                    showToast('Drive resumed', 'success');
+                } else {
+                    // Pause
+                    isPaused = true;
+                    const now = Date.now();
+                    const elapsedSec = Math.floor((now - driveStartTimestamp) / 1000);
+                    pausedDuration = elapsedSec;
+                    stopGpsTracking();
+                    if (durationInterval) { clearInterval(durationInterval);
+                        durationInterval = null; }
+                    pauseDriveBtn.textContent = '▶️ Resume';
+                    pauseDriveBtn.classList.add('paused');
+                    pauseStatus.style.display = 'inline';
+                    showToast('Drive paused', '');
+                }
+                saveActiveDriveToStorage();
+            }
+
+            // ── Drive actions ──
+            function startDrive() {
+                const startMileageValue = startMileageInput.value.trim();
+                if (startMileageValue === '' || isNaN(parseFloat(startMileageValue))) {
+                    startMileageInput.classList.add('input-error');
+                    startMileageInput.focus();
+                    showToast('Please enter the start odometer reading before starting.', 'error');
+                    setTimeout(() => startMileageInput.classList.remove('input-error'), 2500);
+                    return;
+                }
+                startMileageInput.classList.remove('input-error');
+
+                const startMileage = parseFloat(startMileageValue);
+                const now = new Date().toISOString();
+                activeDrive = {
+                    id: Date.now().toString(),
+                    vehicle: currentVehicle,
+                    rate: getCurrentRate(),
+                    plate: getCurrentPlate(),
+                    startMileage: isNaN(startMileage) ? null : startMileage,
+                    startDateTime: now,
+                    endDateTime: null,
+                    endMileage: null,
+                    gpsDistance: 0,
+                    duration: 0,
+                    description: '',
+                    lastPosition: null,
+                    accumulatedPositions: 0,
+                    isPaused: false,
+                    pausedDuration: 0
+                };
+                accumulatedGpsDistance = 0;
+                previousPosition = null;
+                driveStartTimestamp = Date.now();
+                isPaused = false;
+                pausedDuration = 0;
+                startGpsTracking();
+                idlePanel.style.display = 'none';
+                trackingPanel.style.display = 'block';
+                summaryPanel.style.display = 'none';
+                updateLiveStats();
+                if (durationInterval) clearInterval(durationInterval);
+                durationInterval = setInterval(() => {
+                    updateLiveStats();
+                    if (activeDrive) {
+                        if (!isPaused) {
+                            const elapsedSec = Math.floor((Date.now() - driveStartTimestamp) / 1000);
+                            liveDuration.textContent = formatDuration(elapsedSec);
+                        }
+                    }
+                }, 500);
+                pauseDriveBtn.textContent = '⏸️ Pause';
+                pauseDriveBtn.classList.remove('paused');
+                pauseStatus.style.display = 'none';
+                saveActiveDriveToStorage();
+                showToast('Drive started! GPS tracking active.', 'success');
+            }
+
+            function endDrive() {
+                if (isPaused) {
+                    isPaused = false;
+                    pauseDriveBtn.textContent = '⏸️ Pause';
+                    pauseDriveBtn.classList.remove('paused');
+                    pauseStatus.style.display = 'none';
+                }
+                stopGpsTracking();
+                if (durationInterval) { clearInterval(durationInterval);
+                    durationInterval = null; }
+                const now = new Date().toISOString();
+                const elapsedSec = isPaused ? pausedDuration : Math.floor((Date.now() - driveStartTimestamp) / 1000);
+                if (activeDrive) {
+                    activeDrive.endDateTime = now;
+                    activeDrive.duration = elapsedSec;
+                    activeDrive.gpsDistance = accumulatedGpsDistance;
+                    activeDrive.lastPosition = previousPosition;
+                }
+                summaryGpsDist.textContent = formatDistance(accumulatedGpsDistance);
+                summaryDuration.textContent = formatDuration(elapsedSec);
+                summaryStart.textContent = formatDateTime(activeDrive?.startDateTime || now);
+                summaryEnd.textContent = formatDateTime(now);
+                summaryStartMileage.value = activeDrive?.startMileage || '';
+                summaryEndMileage.value = '';
+                summaryDesc.value = '';
+                odometerDiffDisplay.textContent = '';
+                idlePanel.style.display = 'none';
+                trackingPanel.style.display = 'none';
+                summaryPanel.style.display = 'block';
+                updateOdometerDiff();
+                isPaused = false;
+                pausedDuration = 0;
+                saveActiveDriveToStorage();
+                showToast('Drive ended. Enter end odometer & save.', '');
+            }
+
+            function updateOdometerDiff() {
+                const startVal = parseFloat(summaryStartMileage.value);
+                const endVal = parseFloat(summaryEndMileage.value);
+                if (!isNaN(startVal) && !isNaN(endVal) && endVal >= startVal) {
+                    const diff = endVal - startVal;
+                    odometerDiffDisplay.textContent = 'Odometer distance: ' + formatDistance(diff) +
+                        ' (vs GPS: ' + formatDistance(accumulatedGpsDistance) + ')';
+                    odometerDiffDisplay.style.color = Math.abs(diff - accumulatedGpsDistance) < 0.5 ? 'var(--success)' :
+                        'var(--info)';
+                } else if (!isNaN(startVal) && !isNaN(endVal) && endVal < startVal) {
+                    odometerDiffDisplay.textContent = 'End odometer is less than start!';
+                    odometerDiffDisplay.style.color = 'var(--danger)';
+                } else {
+                    odometerDiffDisplay.textContent = '';
+                }
+            }
+
+            function saveDrive() {
+                if (!activeDrive) return;
+
+                const endMileage = parseFloat(summaryEndMileage.value);
+                if (isNaN(endMileage) || endMileage < 0) {
+                    showToast('Please enter a valid end odometer reading.', 'error');
+                    summaryEndMileage.classList.add('input-error');
+                    setTimeout(() => summaryEndMileage.classList.remove('input-error'), 2500);
+                    return;
+                }
+
+                const desc = summaryDesc.value.trim() || 'Private';
+
+                activeDrive.endMileage = endMileage;
+                activeDrive.description = desc;
+                activeDrive.endDateTime = activeDrive.endDateTime || new Date().toISOString();
+                activeDrive.duration = activeDrive.duration || Math.floor((Date.now() - driveStartTimestamp) / 1000);
+                activeDrive.gpsDistance = accumulatedGpsDistance;
+                drives.push({ ...activeDrive });
+
+                setLastOdometer(endMileage);
+
+                activeDrive = null;
+                accumulatedGpsDistance = 0;
+                previousPosition = null;
+                driveStartTimestamp = null;
+                gpsWatchId = null;
+                isPaused = false;
+                pausedDuration = 0;
+                localStorage.removeItem(ACTIVE_DRIVE_KEY);
+                if (durationInterval) { clearInterval(durationInterval);
+                    durationInterval = null; }
+                saveToStorage();
+                updateHistoryUI();
+                idlePanel.style.display = 'block';
+                trackingPanel.style.display = 'none';
+                summaryPanel.style.display = 'none';
+                startMileageInput.value = '';
+                liveDistance.textContent = '0.00 km';
+                liveDuration.textContent = '00:00:00';
+                liveSpeed.textContent = '-- km/h';
+                liveCost.textContent = '0.00 €';
+                gpsStatus.textContent = '● Ready';
+                gpsStatus.className = 'gps-status';
+                updateVehicleUI();
+                showToast('Drive saved!', 'success');
+            }
+
+            function discardDrive() {
+                stopGpsTracking();
+                if (durationInterval) { clearInterval(durationInterval);
+                    durationInterval = null; }
+                activeDrive = null;
+                accumulatedGpsDistance = 0;
+                previousPosition = null;
+                driveStartTimestamp = null;
+                gpsWatchId = null;
+                isPaused = false;
+                pausedDuration = 0;
+                localStorage.removeItem(ACTIVE_DRIVE_KEY);
+                idlePanel.style.display = 'block';
+                trackingPanel.style.display = 'none';
+                summaryPanel.style.display = 'none';
+                startMileageInput.value = '';
+                liveDistance.textContent = '0.00 km';
+                liveDuration.textContent = '00:00:00';
+                liveSpeed.textContent = '-- km/h';
+                liveCost.textContent = '0.00 €';
+                gpsStatus.textContent = '● Ready';
+                gpsStatus.className = 'gps-status';
+                updateVehicleUI();
+                showToast('Drive discarded', '');
+            }
+
+            // ── Event listeners ──
+            btnCar.addEventListener('click', () => {
+                if (activeDrive) { showToast('Cannot switch vehicle during an active drive.', 'error'); return; }
+                currentVehicle = 'car';
+                updateVehicleUI();
+                saveToStorage();
+            });
+            btnMotorcycle.addEventListener('click', () => {
+                if (activeDrive) { showToast('Cannot switch vehicle during an active drive.', 'error'); return; }
+                currentVehicle = 'motorcycle';
+                updateVehicleUI();
+                saveToStorage();
+            });
+            savePlateBtn.addEventListener('click', () => {
+                const val = plateInput.value.trim();
+                setCurrentPlate(val);
+                platePreview.textContent = val ? 'Plate: ' + val : '';
+                saveToStorage();
+                showToast('Plate saved!', 'success');
+            });
+            editRateBtn.addEventListener('click', () => {
+                rateEditor.style.display = 'flex';
+                rateInput.value = getCurrentRate().toFixed(2);
+                rateInput.focus();
+            });
+            saveRateBtn.addEventListener('click', () => {
+                const val = parseFloat(rateInput.value);
+                if (isNaN(val) || val <= 0) { showToast('Please enter a valid rate > 0', 'error'); return; }
+                if (currentVehicle === 'car') settings.carRate = val;
+                else settings.motorcycleRate = val;
+                rateDisplay.textContent = formatCurrency(val) + ' /km';
+                rateEditor.style.display = 'none';
+                saveToStorage();
+                showToast('Rate updated!', 'success');
+            });
+            cancelRateBtn.addEventListener('click', () => {
+                rateEditor.style.display = 'none';
+                rateInput.value = getCurrentRate().toFixed(2);
+            });
+            startDriveBtn.addEventListener('click', startDrive);
+            endDriveBtn.addEventListener('click', endDrive);
+            pauseDriveBtn.addEventListener('click', togglePause);
+            saveDriveBtn.addEventListener('click', saveDrive);
+            discardDriveBtn.addEventListener('click', discardDrive);
+            summaryEndMileage.addEventListener('input', updateOdometerDiff);
+            exportBtn.addEventListener('click', exportData);
+            importBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    importData(e.target.files[0]);
+                }
+                fileInput.value = '';
+            });
+            rateInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') saveRateBtn.click();
+                if (e.key === 'Escape') cancelRateBtn.click();
+            });
+
+            // ── Init ──
+            function init() {
+                loadFromStorage();
+                updateVehicleUI();
+                updateHistoryUI();
+
+                if (activeDrive && !activeDrive.endDateTime) {
+                    accumulatedGpsDistance = activeDrive.gpsDistance || 0;
+                    previousPosition = activeDrive.lastPosition || null;
+                    driveStartTimestamp = new Date(activeDrive.startDateTime).getTime();
+                    currentVehicle = activeDrive.vehicle || 'car';
+                    updateVehicleUI();
+                    idlePanel.style.display = 'none';
+                    trackingPanel.style.display = 'block';
+                    summaryPanel.style.display = 'none';
+                    if (!isPaused) {
+                        startGpsTracking();
+                        if (durationInterval) clearInterval(durationInterval);
+                        durationInterval = setInterval(() => {
+                            updateLiveStats();
+                            if (activeDrive) {
+                                const elapsedSec = Math.floor((Date.now() - driveStartTimestamp) / 1000);
+                                liveDuration.textContent = formatDuration(elapsedSec);
+                            }
+                        }, 500);
+                    } else {
+                        pauseDriveBtn.textContent = '▶️ Resume';
+                        pauseDriveBtn.classList.add('paused');
+                        pauseStatus.style.display = 'inline';
+                        updateLiveStats();
+                    }
+                    showToast('Resumed active drive from previous session.', 'success');
+                } else {
+                    activeDrive = null;
+                    accumulatedGpsDistance = 0;
+                    previousPosition = null;
+                    driveStartTimestamp = null;
+                    isPaused = false;
+                    pausedDuration = 0;
+                    localStorage.removeItem(ACTIVE_DRIVE_KEY);
+                    idlePanel.style.display = 'block';
+                    trackingPanel.style.display = 'none';
+                    summaryPanel.style.display = 'none';
+                }
+
+                if (navigator.geolocation && !activeDrive) {
+                    navigator.geolocation.getCurrentPosition(
+                        () => { gpsAvailable = true;
+                            gpsBanner.style.display = 'none'; },
+                        () => { gpsAvailable = false;
+                            gpsBanner.style.display = 'flex'; },
+                        { timeout: 5000, maximumAge: 30000 }
+                    );
+                } else if (!navigator.geolocation) {
+                    gpsAvailable = false;
+                    gpsBanner.style.display = 'flex';
+                }
+
+                console.log('DriveLogger ready —', currentVehicle, '| Rate:', formatCurrency(getCurrentRate()) +
+                    '/km', '| Drives:', drives.length);
+            }
+
+            init();
+
+            window.addEventListener('beforeunload', () => { saveActiveDriveToStorage();
+                saveToStorage(); });
+            setInterval(() => {
+                if (activeDrive && !activeDrive.endDateTime) saveActiveDriveToStorage();
+            }, 10000);
+
+            console.log('%cDriveLogger Ready %c| %cDark Mode • GPS • CSV Export',
+                'font-weight:bold;font-size:14px;', '', 'color:#8b949e;');
+        })();
+    </script>
+</body>
+</html>
