@@ -1198,6 +1198,23 @@
                 return div.innerHTML;
             }
 
+            // ── Robust number parser for CSV ──
+            function parseCSVNumber(str) {
+                if (!str || str.trim() === '') return 0;
+                let s = str.trim();
+                // Detect if comma is used as decimal separator (e.g., "0,602")
+                // Remove any thousands separators (dots) if comma exists
+                if (s.includes(',') && !s.includes('.')) {
+                    // Only comma, treat as decimal
+                    s = s.replace(',', '.');
+                } else if (s.includes(',') && s.includes('.')) {
+                    // Both present: likely "1,234.56" -> remove commas
+                    s = s.replace(/,/g, '');
+                }
+                const num = parseFloat(s);
+                return isNaN(num) ? 0 : num;
+            }
+
             // ── CSV Export ──
             function exportData() {
                 if (drives.length === 0) {
@@ -1308,7 +1325,7 @@
                 showToast('CSV exported! ' + drives.length + ' drives', 'success');
             }
 
-            // ── Import Logic (fixed) ──
+            // ── Import Logic (fixed with robust number parser) ──
             function importData(file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -1370,7 +1387,6 @@
                             // Process data rows (skip header and comment lines)
                             for (let i = headerIndex + 1; i < lines.length; i++) {
                                 const line = lines[i];
-                                // Skip comment lines (starting with '#')
                                 if (line.startsWith('#')) continue;
                                 if (line.trim() === '') continue;
 
@@ -1398,11 +1414,11 @@
                                 const startTime = values[idxStartTime]?.trim() || '00:00';
                                 const endDate = values[idxEndDate]?.trim() || '';
                                 const endTime = values[idxEndTime]?.trim() || '00:00';
-                                const startMileage = parseFloat(values[idxStartMileage]) || 0;
-                                const endMileage = parseFloat(values[idxEndMileage]) || 0;
-                                const gpsDist = parseFloat(values[idxGpsDist]) || 0;
-                                const duration = parseFloat(values[idxDuration]) || 0;
-                                const rate = parseFloat(values[idxRate]) || getCurrentRate();
+                                const startMileage = parseCSVNumber(values[idxStartMileage]);
+                                const endMileage = parseCSVNumber(values[idxEndMileage]);
+                                const gpsDist = parseCSVNumber(values[idxGpsDist]);
+                                const duration = parseCSVNumber(values[idxDuration]);
+                                const rate = parseCSVNumber(values[idxRate]) || getCurrentRate();
                                 const description = values[idxDescription]?.trim() || 'Imported';
 
                                 if (startDate && endDate) {
