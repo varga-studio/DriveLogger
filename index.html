@@ -1085,14 +1085,12 @@
                             accumulatedGpsDistance = activeDrive.gpsDistance || 0;
                             driveStartTimestamp = new Date(activeDrive.startDateTime).getTime();
                             previousPosition = activeDrive.lastPosition || null;
-                            // Check if it was paused
                             if (activeDrive.isPaused) {
                                 isPaused = true;
                                 pausedDuration = activeDrive.pausedDuration || 0;
                                 pauseDriveBtn.textContent = '▶️ Resume';
                                 pauseDriveBtn.classList.add('paused');
                                 pauseStatus.style.display = 'inline';
-                                // We are paused, so no GPS or timer running yet
                             }
                         } else {
                             localStorage.removeItem(ACTIVE_DRIVE_KEY);
@@ -1310,7 +1308,7 @@
                 showToast('CSV exported! ' + drives.length + ' drives', 'success');
             }
 
-            // ── Import Logic ──
+            // ── Import Logic (fixed) ──
             function importData(file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -1327,52 +1325,60 @@
                                 return;
                             }
                         } else {
+                            // Parse CSV
                             const lines = content.split('\n').filter(line => line.trim() !== '');
-                            let headerFound = false;
-                            let header = [];
-                            let dataRows = [];
-
-                            for (let line of lines) {
-                                if (line.startsWith('#')) continue;
-                                if (!headerFound) {
-                                    if (line.includes('Vehicle') && line.includes('Plate') && line.includes(
-                                            'Start Date')) {
-                                        header = line.split(';');
-                                        headerFound = true;
-                                    }
-                                    continue;
+                            let headerLine = null;
+                            let headerIndex = -1;
+                            // Find the header line (contains 'Vehicle' and 'Plate' and 'Start Date')
+                            for (let i = 0; i < lines.length; i++) {
+                                const line = lines[i];
+                                // Check if it contains the key columns (case-insensitive)
+                                if (line.toLowerCase().includes('vehicle') &&
+                                    line.toLowerCase().includes('plate') &&
+                                    line.toLowerCase().includes('start date')) {
+                                    headerLine = line;
+                                    headerIndex = i;
+                                    break;
                                 }
-                                dataRows.push(line);
                             }
 
-                            if (!headerFound) {
+                            if (!headerLine) {
                                 showToast('Invalid CSV – header not found.', 'error');
                                 return;
                             }
 
-                            const idxVehicle = header.indexOf('Vehicle');
-                            const idxPlate = header.indexOf('Plate');
-                            const idxStartDate = header.indexOf('Start Date');
-                            const idxStartTime = header.indexOf('Start Time');
-                            const idxEndDate = header.indexOf('End Date');
-                            const idxEndTime = header.indexOf('End Time');
-                            const idxStartMileage = header.indexOf('Start Mileage (km)');
-                            const idxEndMileage = header.indexOf('End Mileage (km)');
-                            const idxGpsDist = header.indexOf('GPS Dist (km)');
-                            const idxDuration = header.indexOf('Duration (sec)');
-                            const idxRate = header.indexOf('Rate (€/km)');
-                            const idxDescription = header.indexOf('Description');
+                            // Parse header
+                            const header = headerLine.split(';').map(h => h.trim());
+                            const idxVehicle = header.findIndex(h => h.toLowerCase() === 'vehicle');
+                            const idxPlate = header.findIndex(h => h.toLowerCase() === 'plate');
+                            const idxStartDate = header.findIndex(h => h.toLowerCase() === 'start date');
+                            const idxStartTime = header.findIndex(h => h.toLowerCase() === 'start time');
+                            const idxEndDate = header.findIndex(h => h.toLowerCase() === 'end date');
+                            const idxEndTime = header.findIndex(h => h.toLowerCase() === 'end time');
+                            const idxStartMileage = header.findIndex(h => h.toLowerCase() === 'start mileage (km)');
+                            const idxEndMileage = header.findIndex(h => h.toLowerCase() === 'end mileage (km)');
+                            const idxGpsDist = header.findIndex(h => h.toLowerCase() === 'gps dist (km)');
+                            const idxDuration = header.findIndex(h => h.toLowerCase() === 'duration (sec)');
+                            const idxRate = header.findIndex(h => h.toLowerCase() === 'rate (€/km)');
+                            const idxDescription = header.findIndex(h => h.toLowerCase() === 'description');
 
                             if (idxVehicle === -1 || idxStartDate === -1 || idxStartTime === -1) {
                                 showToast('Invalid CSV – required columns missing.', 'error');
                                 return;
                             }
 
-                            for (let row of dataRows) {
+                            // Process data rows (skip header and comment lines)
+                            for (let i = headerIndex + 1; i < lines.length; i++) {
+                                const line = lines[i];
+                                // Skip comment lines (starting with '#')
+                                if (line.startsWith('#')) continue;
+                                if (line.trim() === '') continue;
+
+                                // Parse CSV respecting quotes
                                 let values = [];
                                 let current = '';
                                 let insideQuotes = false;
-                                for (let ch of row) {
+                                for (let ch of line) {
                                     if (ch === '"') {
                                         insideQuotes = !insideQuotes;
                                         continue;
@@ -1404,8 +1410,7 @@
                                     const endDateTime = new Date(endDate + 'T' + endTime + ':00').toISOString();
 
                                     importedDrives.push({
-                                        id: 'imp_' + Date.now() + '_' + Math.random().toString(36).substr(2,
-                                        6),
+                                        id: 'imp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
                                         vehicle: vehicle,
                                         plate: plate,
                                         startMileage: startMileage,
@@ -1587,7 +1592,6 @@
                 gpsStatus.textContent = '● Acquiring GPS signal...';
                 gpsStatus.className = 'gps-status';
                 previousPosition = activeDrive?.lastPosition || null;
-                // Don't reset accumulatedGpsDistance – we want to continue from where we left off
 
                 gpsWatchId = navigator.geolocation.watchPosition(
                     (position) => {
@@ -1650,11 +1654,8 @@
                 if (isPaused) {
                     // Resume
                     isPaused = false;
-                    // Adjust driveStartTimestamp so that elapsed = pausedDuration
                     driveStartTimestamp = Date.now() - pausedDuration * 1000;
-                    // Restart GPS
                     startGpsTracking();
-                    // Restart timer interval
                     if (durationInterval) clearInterval(durationInterval);
                     durationInterval = setInterval(() => {
                         updateLiveStats();
@@ -1670,13 +1671,10 @@
                 } else {
                     // Pause
                     isPaused = true;
-                    // Store current elapsed time
                     const now = Date.now();
                     const elapsedSec = Math.floor((now - driveStartTimestamp) / 1000);
                     pausedDuration = elapsedSec;
-                    // Stop GPS
                     stopGpsTracking();
-                    // Stop timer
                     if (durationInterval) { clearInterval(durationInterval);
                         durationInterval = null; }
                     pauseDriveBtn.textContent = '▶️ Resume';
@@ -1746,9 +1744,7 @@
             }
 
             function endDrive() {
-                // If paused, stop pause state but keep accumulated data
                 if (isPaused) {
-                    // we're already stopped, but we'll set isPaused false and clear
                     isPaused = false;
                     pauseDriveBtn.textContent = '⏸️ Pause';
                     pauseDriveBtn.classList.remove('paused');
@@ -1777,7 +1773,6 @@
                 trackingPanel.style.display = 'none';
                 summaryPanel.style.display = 'block';
                 updateOdometerDiff();
-                // Reset pause state
                 isPaused = false;
                 pausedDuration = 0;
                 saveActiveDriveToStorage();
@@ -1948,7 +1943,6 @@
                     idlePanel.style.display = 'none';
                     trackingPanel.style.display = 'block';
                     summaryPanel.style.display = 'none';
-                    // If not paused, start GPS and timer
                     if (!isPaused) {
                         startGpsTracking();
                         if (durationInterval) clearInterval(durationInterval);
@@ -1960,11 +1954,10 @@
                             }
                         }, 500);
                     } else {
-                        // Paused – show paused state but don't start GPS/timer
                         pauseDriveBtn.textContent = '▶️ Resume';
                         pauseDriveBtn.classList.add('paused');
                         pauseStatus.style.display = 'inline';
-                        updateLiveStats(); // show frozen stats
+                        updateLiveStats();
                     }
                     showToast('Resumed active drive from previous session.', 'success');
                 } else {
